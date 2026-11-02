@@ -1,5 +1,28 @@
 // Low-resolution mask and cached glow replace thousands of blurred circles.
 export const REVEAL_SECONDS=3;
+// A short, bounded trail follows input; points expire when the player pauses.
+export function createLensTrail(makeCanvas=()=>document.createElement('canvas')){
+ const sprite=makeCanvas();sprite.width=sprite.height=32;const ink=sprite.getContext('2d');
+ const glow=ink.createRadialGradient(16,16,0,16,16,16);glow.addColorStop(0,'#fff8db');glow.addColorStop(.15,'#ffe2a2ee');glow.addColorStop(.45,'#eabd6155');glow.addColorStop(1,'#eabd6100');ink.fillStyle=glow;ink.fillRect(0,0,32,32);
+ let points=[];const life=.9;
+ return {clear(){points=[];},draw(ctx,point,now){
+  while(points.length&&now-points[0].time>life)points.shift();
+  const last=points.at(-1);
+  if(point&&(!last||(now-last.time>=.025&&Math.hypot(point.x-last.x,point.y-last.y)>4))){
+   if(last&&Math.hypot(point.x-last.x,point.y-last.y)>280)points=[];
+   points.push({...point,time:now});if(points.length>24)points.shift();
+  }
+  if(!points.length)return;
+  ctx.save();ctx.globalCompositeOperation='source-over';ctx.lineWidth=2.4;ctx.lineCap='round';ctx.lineJoin='round';
+  for(let i=0;i<points.length;i++){
+   const p=points[i],fade=Math.max(0,1-(now-p.time)/life),size=18+12*fade;
+   if(i){const previous=points[i-1];ctx.globalAlpha=fade*.85;ctx.strokeStyle='#e6b852';ctx.beginPath();ctx.moveTo(previous.x,previous.y);ctx.lineTo(p.x,p.y);ctx.stroke();}
+   ctx.globalCompositeOperation='lighter';ctx.globalAlpha=fade*.95;ctx.drawImage(sprite,p.x-size/2,p.y-size/2,size,size);ctx.globalCompositeOperation='source-over';
+   if(i%4===0){const arm=2+3*fade;ctx.globalAlpha=fade;ctx.strokeStyle='#fff0ac';ctx.beginPath();ctx.moveTo(p.x-arm,p.y);ctx.lineTo(p.x+arm,p.y);ctx.moveTo(p.x,p.y-arm);ctx.lineTo(p.x,p.y+arm);ctx.stroke();}
+  }
+  ctx.restore();
+ }};
+}
 // Only 28 cached sprites per frame; no per-particle shadow blur or allocations.
 export function createTourGlow(width,height,makeCanvas=()=>document.createElement('canvas')){
  const sprite=makeCanvas();sprite.width=sprite.height=48;const ink=sprite.getContext('2d');

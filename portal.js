@@ -1,7 +1,7 @@
 import {createJourney,discover,continueJourney,COMPLETION_TEXT} from './journey-state.mjs';
 import {recapFrame,recapDuration} from './recap.mjs';
 import {createScrollAtlas} from './scroll-atlas.mjs';
-import {createReveal,createTourGlow,REVEAL_SECONDS} from './reveal.mjs';
+import {createReveal,createTourGlow,createLensTrail,REVEAL_SECONDS} from './reveal.mjs';
 import {createGameAudio} from './game-audio.mjs';
 import {createInputRouter} from './input-router.mjs';
 const audio=createGameAudio();
@@ -41,10 +41,10 @@ function updateCopy(){
  $('back').hidden=true;$('scrollPosition').hidden=true;$('exploreHint').hidden=true;
 }
 function haltFilm(){reward.pause();reward.removeAttribute('src');reward.load();reward.hidden=true;}
-function reset(){audio.setCelebrating(false);audio.stopNarration();haltFilm();menuOrigin=pointerClient();menuArmed=false;input(.5,.5,false,'none');journey=createJourney(chapters);viewX=chapters[0].x;travel=null;celebration=null;recap=null;replayFinished=false;artPan=artOverflow/2;positionPainting();dwell=0;hover=-1;uiTime=0;uiHover='';searchArmed=true;$('notice').hidden=true;$('completionGesture').hidden=true;$('rewardMedia').hidden=false;$('travelBanner').hidden=true;$('skipReplay').hidden=true;$('mainView').classList.remove('is-exploring','is-celebrating');$('welcome').hidden=false;lastIntro=-Infinity;cacheView();updateCopy();fitWelcome();}
+function reset(){lensTrail.clear();audio.setCelebrating(false);audio.stopNarration();haltFilm();menuOrigin=pointerClient();menuArmed=false;input(.5,.5,false,'none');journey=createJourney(chapters);viewX=chapters[0].x;travel=null;celebration=null;recap=null;replayFinished=false;artPan=artOverflow/2;positionPainting();dwell=0;hover=-1;uiTime=0;uiHover='';searchArmed=true;$('notice').hidden=true;$('completionGesture').hidden=true;$('rewardMedia').hidden=false;$('travelBanner').hidden=true;$('skipReplay').hidden=true;$('mainView').classList.remove('is-exploring','is-celebrating');$('welcome').hidden=false;lastIntro=-Infinity;cacheView();updateCopy();fitWelcome();}
 function detail(target){if(!target)return;const d=$('detailCanvas').getContext('2d'),cx=chapters[journey.chapter].x+target.x*VIEW,cy=target.y*926,cw=500,ch=234;atlas.draw(d,Math.max(0,Math.min(SCROLL_W-cw,cx-cw/2)),Math.max(0,Math.min(926-ch,cy-ch/2)),cw,ch,0,0,640,300);}
 function showDiscovery(i){
- if(!discover(journey,chapters,i))return;const c=chapters[journey.chapter],t=c.targets[i],n=journey.found[journey.chapter].length;
+ if(!discover(journey,chapters,i))return;lensTrail.clear();const c=chapters[journey.chapter],t=c.targets[i],n=journey.found[journey.chapter].length;
  $('notice').dataset.phase='discovery';$('notice').style.setProperty('--notice-scale','1');$('completionGesture').hidden=true;
  dwell=0;hover=-1;uiHover='';uiTime=0;updateCopy();detail(t);$('detailCanvas').hidden=false;
  $('discoveryKicker').textContent='發現畫中生活 · '+c.name;$('discoveryCount').textContent=n+' / '+c.targets.length;$('noticeTitle').textContent='搵到'+t.name+'！';$('noticeText').textContent=t.learn;
@@ -105,7 +105,7 @@ function uiDwell(dt){
  for(const id of ids){const b=$(id),r=b.getBoundingClientRect(),visible=!b.disabled&&r.width>0&&r.height>0;if(pointer.active&&visible&&pc.x>=r.left&&pc.x<=r.right&&pc.y>=r.top&&pc.y<=r.bottom)hit=id;else b.style.background='';}
  if(hit!==uiHover){uiHover=hit;uiTime=0;}else if(hit){uiTime+=dt;$(hit).style.background=`linear-gradient(90deg,#8a794b ${Math.min(100,uiTime/1.25*100)}%,#273224 0)`;if(uiTime>=1.25){uiTime=0;uiHover='';$(hit).click();}}
 }
-const reveal=createReveal(W,H),tourGlow=createTourGlow(W,H);
+const reveal=createReveal(W,H),tourGlow=createTourGlow(W,H),lensTrail=createLensTrail();
 function beginCelebration(){audio.setCelebrating(true);audio.stopNarration();audio.effect('victory');cacheDim();artPan=artOverflow/2;positionPainting();journey.mode='burn';celebration={start:performance.now()};$('notice').hidden=true;$('skipReplay').hidden=false;$('mainView').classList.add('is-celebrating');$('travelBanner').hidden=false;$('travelBanner').textContent='十個線索齊集 · 讓古城甦醒';$('help').textContent='通關時刻';$('taskTitle').textContent='灰幕化成光，古城現真色';$('taskText').textContent='';dwell=0;uiTime=0;uiHover='';}
 function drawBurn(now){
  const elapsed=(now-celebration.start)/1000;reveal.draw(ctx,surface,dim,elapsed);
@@ -133,7 +133,7 @@ function draw(now){
   else if(journey.mode==='transition'&&travel){const t=Math.min(1,(now-travel.start)/3200),ease=t*t*(3-2*t);viewX=travel.from+(travel.to-travel.from)*ease;cacheView();ctx.drawImage(surface,0,0);if(t===1){travel=null;journey.mode='search';$('travelBanner').hidden=true;dwell=0;searchOrigin=pointerClient();searchArmed=false;}}
   else if(journey.mode==='search')search(dt,p);
   else{ctx.drawImage(surface,0,0);ctx.fillStyle='#0005';ctx.fillRect(0,0,W,H);}
-  if($('welcome').hidden)vignette();
+  if($('welcome').hidden){if(journey.mode==='search')lensTrail.draw(ctx,pointer.active&&p.inside?{x:p.x*W,y:p.y*H}:null,now/1000);vignette();}
  }
  uiDwell(dt);const pc=pointerClient(),main=$('mainView').getBoundingClientRect();$('handCursor').hidden=!pointer.active;$('handCursor').style.transform=`translate3d(${pc.x-main.left}px,${pc.y-main.top}px,0) translate(-50%,-50%)`;
  const percent=Math.round(Math.min(1,uiHover?uiTime/1.25:dwell/1.8)*100);$('dwellPercent').textContent=percent+'%';$('dwellFill').style.width=percent+'%';

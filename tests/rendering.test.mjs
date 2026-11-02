@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createScrollAtlas} from '../scroll-atlas.mjs';
-import {createReveal,createTourGlow,REVEAL_SECONDS} from '../reveal.mjs';
+import {createReveal,createTourGlow,createLensTrail,REVEAL_SECONDS} from '../reveal.mjs';
 
 test('a view crossing a tile boundary stays visible while small textures load',()=>{
  const images=[],draws=[];const makeImage=()=>{const image={naturalWidth:4096,naturalHeight:126};images.push(image);return image;};
@@ -36,4 +36,14 @@ test('tour particles reuse one small sprite and stay within a fixed drawing budg
  assert.ok(draws.every(d=>d[0]===canvases[0]&&d.slice(1).every(Number.isFinite)));
  assert.notDeepEqual(draws.map(d=>d.slice(1)),first,'golden lights drift during the tour');
  assert.equal(writes.some(([k,v])=>k==='shadowBlur'&&v>0),false);
+});
+
+test('lens trail has a bounded sprite budget, fades on pause, and clears between rounds',()=>{
+ let draws=0,maximum=0,created=0;
+ const ctx=new Proxy({createRadialGradient:()=>({addColorStop(){}}),drawImage(){draws++;}},{get:(o,k)=>o[k]??(()=>{})});
+ const trail=createLensTrail(()=>{created++;return {getContext:()=>ctx};});
+ for(let i=0;i<200;i++){draws=0;trail.draw(ctx,{x:i*5,y:100+Math.sin(i)*10},i*.03);maximum=Math.max(maximum,draws);}
+ assert.equal(created,1);assert.ok(maximum<=24);assert.ok(maximum>1,'movement produces a visible tail');
+ draws=0;trail.draw(ctx,null,8);assert.equal(draws,0,'old light disappears when input stops');
+ trail.draw(ctx,{x:20,y:30},9);trail.clear();draws=0;trail.draw(ctx,null,9.1);assert.equal(draws,0);
 });
