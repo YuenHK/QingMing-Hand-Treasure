@@ -1,24 +1,21 @@
 // Low-resolution mask and cached glow replace thousands of blurred circles.
 export const REVEAL_SECONDS=3;
-// A short, bounded trail follows input; points expire when the player pauses.
-export function createLensTrail(makeCanvas=()=>document.createElement('canvas')){
+// A few short-lived star glints follow movement, without lines or a light trail.
+export function createLensSparkles(makeCanvas=()=>document.createElement('canvas')){
  const sprite=makeCanvas();sprite.width=sprite.height=32;const ink=sprite.getContext('2d');
- const glow=ink.createRadialGradient(16,16,0,16,16,16);glow.addColorStop(0,'#fff8db');glow.addColorStop(.15,'#ffe2a2ee');glow.addColorStop(.45,'#eabd6155');glow.addColorStop(1,'#eabd6100');ink.fillStyle=glow;ink.fillRect(0,0,32,32);
- let points=[];const life=.9;
- return {clear(){points=[];},draw(ctx,point,now){
-  while(points.length&&now-points[0].time>life)points.shift();
-  const last=points.at(-1);
-  if(point&&(!last||(now-last.time>=.025&&Math.hypot(point.x-last.x,point.y-last.y)>4))){
-   if(last&&Math.hypot(point.x-last.x,point.y-last.y)>280)points=[];
-   points.push({...point,time:now});if(points.length>24)points.shift();
-  }
-  if(!points.length)return;
-  ctx.save();ctx.globalCompositeOperation='source-over';ctx.lineWidth=2.4;ctx.lineCap='round';ctx.lineJoin='round';
-  for(let i=0;i<points.length;i++){
-   const p=points[i],fade=Math.max(0,1-(now-p.time)/life),size=18+12*fade;
-   if(i){const previous=points[i-1];ctx.globalAlpha=fade*.85;ctx.strokeStyle='#e6b852';ctx.beginPath();ctx.moveTo(previous.x,previous.y);ctx.lineTo(p.x,p.y);ctx.stroke();}
-   ctx.globalCompositeOperation='lighter';ctx.globalAlpha=fade*.95;ctx.drawImage(sprite,p.x-size/2,p.y-size/2,size,size);ctx.globalCompositeOperation='source-over';
-   if(i%4===0){const arm=2+3*fade;ctx.globalAlpha=fade;ctx.strokeStyle='#fff0ac';ctx.beginPath();ctx.moveTo(p.x-arm,p.y);ctx.lineTo(p.x+arm,p.y);ctx.moveTo(p.x,p.y-arm);ctx.lineTo(p.x,p.y+arm);ctx.stroke();}
+ const glow=ink.createRadialGradient(16,16,0,16,16,16);glow.addColorStop(0,'#fff8db');glow.addColorStop(.15,'#ffe2a2dd');glow.addColorStop(.4,'#eabd6133');glow.addColorStop(1,'#eabd6100');ink.fillStyle=glow;ink.fillRect(0,0,32,32);
+ let stars=[],anchor=null,sequence=0,lastEmit=-Infinity;const life=.6;
+ return {clear(){stars=[];anchor=null;sequence=0;lastEmit=-Infinity;},draw(ctx,point,now){
+  while(stars.length&&now-stars[0].time>life)stars.shift();
+  if(point&&(!anchor||Math.hypot(point.x-anchor.x,point.y-anchor.y)>8)&&now-lastEmit>=.11){
+   const seed=sequence++;stars.push({x:point.x+Math.sin(seed*2.4)*10,y:point.y-6+(seed%3-1)*5,time:now,seed});if(stars.length>8)stars.shift();anchor={...point};lastEmit=now;
+  }else if(!point)anchor=null;
+  if(!stars.length)return;
+  ctx.save();ctx.lineWidth=.9;ctx.lineCap='round';
+  for(const p of stars){
+   const age=now-p.time,fade=Math.max(0,1-age/life),pulse=.45+.55*Math.sin(now*6+p.seed)**2,x=p.x+Math.sin(p.seed)*age*6,y=p.y-age*12,arm=1.5+1.5*pulse;
+   ctx.globalCompositeOperation='lighter';ctx.globalAlpha=fade*pulse*.7;ctx.drawImage(sprite,x-7,y-7,14,14);
+   ctx.globalCompositeOperation='source-over';ctx.globalAlpha=fade*pulse*.85;ctx.strokeStyle='#fff0ac';ctx.beginPath();ctx.moveTo(x-arm,y);ctx.lineTo(x+arm,y);ctx.moveTo(x,y-arm);ctx.lineTo(x,y+arm);ctx.stroke();
   }
   ctx.restore();
  }};

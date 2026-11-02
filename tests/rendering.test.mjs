@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createScrollAtlas} from '../scroll-atlas.mjs';
-import {createReveal,createTourGlow,createLensTrail,REVEAL_SECONDS} from '../reveal.mjs';
+import {createReveal,createTourGlow,createLensSparkles,REVEAL_SECONDS} from '../reveal.mjs';
 
 test('a view crossing a tile boundary stays visible while small textures load',()=>{
  const images=[],draws=[];const makeImage=()=>{const image={naturalWidth:4096,naturalHeight:126};images.push(image);return image;};
@@ -38,12 +38,14 @@ test('tour particles reuse one small sprite and stay within a fixed drawing budg
  assert.equal(writes.some(([k,v])=>k==='shadowBlur'&&v>0),false);
 });
 
-test('lens trail has a bounded sprite budget, fades on pause, and clears between rounds',()=>{
- let draws=0,maximum=0,created=0;
- const ctx=new Proxy({createRadialGradient:()=>({addColorStop(){}}),drawImage(){draws++;}},{get:(o,k)=>o[k]??(()=>{})});
- const trail=createLensTrail(()=>{created++;return {getContext:()=>ctx};});
+test('lens sparkles stay sparse, fade quickly, and clear between rounds',()=>{
+ let draws=0,maximum=0,created=0,lastX=0,lastY=0;
+ const ctx=new Proxy({createRadialGradient:()=>({addColorStop(){}}),moveTo(x,y){lastX=x;lastY=y;},lineTo(x,y){assert.ok(Math.hypot(x-lastX,y-lastY)<=6.01,'only tiny star arms are drawn, without joining movement points');lastX=x;lastY=y;},drawImage(_image,_x,_y,w,h){draws++;assert.ok(w<=14&&h<=14,'glow stays small enough to preserve artwork detail');assert.ok(ctx.globalAlpha<=.85,'lights remain translucent');}},{get:(o,k)=>o[k]??(()=>{})});
+ const trail=createLensSparkles(()=>{created++;return {getContext:()=>ctx};});
  for(let i=0;i<200;i++){draws=0;trail.draw(ctx,{x:i*5,y:100+Math.sin(i)*10},i*.03);maximum=Math.max(maximum,draws);}
- assert.equal(created,1);assert.ok(maximum<=24);assert.ok(maximum>1,'movement produces a visible tail');
+ assert.equal(created,1);assert.ok(maximum<=8);assert.ok(maximum>1,'movement produces a few visible stars');
+ draws=0;trail.draw(ctx,null,6.1);assert.ok(draws>0,'fresh stars remain briefly visible');
  draws=0;trail.draw(ctx,null,8);assert.equal(draws,0,'old light disappears when input stops');
  trail.draw(ctx,{x:20,y:30},9);trail.clear();draws=0;trail.draw(ctx,null,9.1);assert.equal(draws,0);
+ trail.draw(ctx,{x:20,y:30},10);draws=0;trail.draw(ctx,{x:20,y:30},11);assert.equal(draws,0,'a stationary pointer must not keep generating stars');
 });
