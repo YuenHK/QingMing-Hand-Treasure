@@ -61,3 +61,5 @@ GitHub Pages 使用 `.github/workflows/pages.yml`：先跑自動測試，再校�
 原畫影像來自 [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:QingMingShangHeTu_Big.jpg)，來源頁標示 Public Domain／PD-Art。原畫、套件及語音來源保留於 `assets/SOURCES.json`、`vendor/mediapipe/SOURCE.json` 及 `assets/narration/manifest.json`，MediaPipe 授權見 `vendor/mediapipe/LICENSE`。第三方素材各依原有授權；公開程式碼不代表所有素材均可任意另行授權。
 
 通關消融及回放期間會切換成較輕快的五聲音階慶祝配樂，並在回放畫卷上顯示緩緩上飄的金色光粒子；到完成對話框或重新開始時回復平靜配樂。粒子只重用一張 48 像素光點貼圖，每幀固定繪製 28 點，不使用逐點陰影模糊。
+
+右欄下方以三步大字說明「手部關鍵點辨識 → 座標映射與平滑處理 → 停留判定與事件觸發」，每步附簡短說明，方便工作人員講解。已移除右欄底部的本機處理提示文字；實際影像處理方式及介紹頁的私隱說明保持原有設定。

@@ -114,4 +114,11 @@ header{gap:14px;align-items:center}
 /* A clear exhibition heading; narration stays on without a dock switch. */
 .aiIntro .eyebrow{display:block}
 .aiIntro .eyebrow,.aiIntro h2{font:21px serif;letter-spacing:0;color:#ecd9a5}
-.dockBottom .aiExplanation{display:block;font-size:16px;line-height:1.6;font-weight:600;color:#e7dbb4}
+.dockBottom{flex-shrink:0}
+.dockBottom .aiExplanation{width:100%;display:grid;gap:8px;list-style:none;counter-reset:explain;margin:0;padding:0;color:#e7dbb4}
+.aiExplanation li{position:relative;counter-increment:explain;padding-left:26px}
+.aiExplanation li::before{content:counter(explain,decimal-leading-zero);position:absolute;left:0;top:3px;font:14px monospace;color:#c9b878}
+.aiExplanation b{display:block;font-size:18px;line-height:1.35;font-weight:600;color:#f0dca4}
+.aiExplanation span{display:block;font-size:15px;line-height:1.4;margin-top:2px;color:#d5d9c2}
+@media(max-height:850px){#cameraPreview{height:clamp(100px,20vh,180px)}.reality>p,.commandCard>p{display:none}#aiDock,#aiLive{gap:6px}.positionCard{min-height:120px}.positionCard .analysisView{min-height:64px}}
+@media(max-height:650px){#cameraPreview{height:clamp(80px,18vh,115px)}.positionCard{min-height:106px}.positionCard .analysisView{min-height:50px}}
