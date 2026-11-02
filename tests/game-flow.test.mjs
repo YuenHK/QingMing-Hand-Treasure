@@ -45,10 +45,11 @@ test('hand selection works on the last dialog and restart returns to the introdu
  assert.equal(get('welcome').hidden,true,'hand dwell must start on the intro itself');
  assert.equal(get('handCursor').hidden,false);assert.equal(get('handOverlay').dataset.landmarks,21);
  const state=()=>window.portalGame.getState();
+ const firstRoundGateIds=state().targets.map(t=>t.id);
  for(let chapter=0;chapter<5;chapter++){
   for(let target=0;target<2;target++){
    window.portalInput(.02,.98,true,'mouse');advance(.1);
-   const t=window.PORTAL_CHAPTERS[chapter].targets[target],r=get('stage').getBoundingClientRect();
+   const t=state().targets[target],r=get('stage').getBoundingClientRect();
    window.portalInput((r.left+t.x*r.width)/1280,(r.top+t.y*r.height)/720,true,'mouse');advance(2);
    assert.equal(state().mode,'discovery',`chapter ${chapter}, clue ${target}`);
    get('continue').click();if(target===1&&chapter<4)advance(3.4);
@@ -65,7 +66,7 @@ test('hand selection works on the last dialog and restart returns to the introdu
  assert.equal(JSON.parse(get('audioControls').dataset.state).celebrating,false,'completion dialog returns to calm music');
  assert.match(get('continue').textContent,/再玩一次/);assert.doesNotMatch(get('noticeText').textContent,/自由|漫遊/);
  advance(1.8,hand(.5,640/720));assert.equal(state().mode,'search');assert.equal(state().chapter,0);assert.equal(state().total,0);
- assert.equal(get('welcome').hidden,false,'replay starts at the instructions');assert.equal(stopped,false,'restart must retain the live camera');
+ assert.equal(get('welcome').hidden,false,'replay starts at the instructions');assert.ok(state().targets.every(t=>!firstRoundGateIds.includes(t.id)),'replay must draw new objects');assert.equal(stopped,false,'restart must retain the live camera');
  advance(.8,hand(.5,640/720));assert.equal(get('welcome').hidden,false,'holding the same hand must not skip the instructions');
  advance(.4,hand(.2,.4));advance(1.8,hand(.5,620/720));assert.equal(get('welcome').hidden,true,'new round can start with a deliberate hand movement');
 });

@@ -20,6 +20,34 @@
       "sha256": "b61bef9f4c66903f37e4ca9597d4d7fad83706f6aaa37c11fc7684fefdff439e"
     },
     {
+      "id": "gateTower",
+      "text": "搵到城牆上嘅城樓！城樓建喺城牆上，位置較高，方便觀察城外情況。畫中一層層嘅屋簷，亦令城門更加醒目。",
+      "file": "gateTower.mp3",
+      "bytes": 82512,
+      "sha256": "be7e1ae3163a6873023c2260e3dcf150ed1604fdaad11e0eef1d421180700df4"
+    },
+    {
+      "id": "gateFootbridge",
+      "text": "搵到河上木橋！木橋連接河道兩邊，行人唔使落船都可以過河。畫中橋面兩旁有欄杆，下面就留出流水空間。",
+      "file": "gateFootbridge.mp3",
+      "bytes": 80928,
+      "sha256": "178a2bbf4b65a7751261c6021975c9baab31a6a78dcc697deecec460ff389898"
+    },
+    {
+      "id": "gateGoodsCart",
+      "text": "搵到木輪貨車！木輪貨車可以搬運較重或者較多嘅物件。畫中車輛同人群一齊經過城門，帶出城市繁忙嘅交通。",
+      "file": "gateGoodsCart.mp3",
+      "bytes": 81072,
+      "sha256": "cdb4c6dbaf4ee3ad327010ebcb01ce5fd97a6718850a830971bf2372027f4e29"
+    },
+    {
+      "id": "gatePierPavilion",
+      "text": "搵到河岸涼亭！有頂嘅亭可以遮陽擋雨，俾人稍作休息。呢座小亭靠近河岸，同旁邊上落船嘅位置連成一個空間。",
+      "file": "gatePierPavilion.mp3",
+      "bytes": 82080,
+      "sha256": "a5c95da24a69f52cf11e90654280a3d130f0978d00464fd9b508a804fc4caef9"
+    },
+    {
       "id": "paifang",
       "text": "搵到街口牌坊！牌坊係古代常見嘅標誌建築，可以標示街道或地方。畫中佢橫跨路口，醒目嘅外形亦方便行人認路。",
       "file": "paifang.mp3",
@@ -32,6 +60,34 @@
       "file": "sedan.mp3",
       "bytes": 81504,
       "sha256": "df6497d43776fa22ab2b8b1d2c2077e6d330e198604887bd31db322ea9fd66d8"
+    },
+    {
+      "id": "streetCoveredCart",
+      "text": "搵到有篷木車！有篷木車可以載人或者物件，上面嘅頂篷可以遮陽擋雨。畫中車前有牲畜拉住，車輪就沿住大街前進。",
+      "file": "streetCoveredCart.mp3",
+      "bytes": 85104,
+      "sha256": "881edafbd80d42e0701932ccaebb3655702c8a6294d70556851f0b917ac551bd"
+    },
+    {
+      "id": "streetRider",
+      "text": "搵到大街騎馬人！騎馬係古人出行嘅方法之一。畫中騎馬人同附近步行嘅人一齊出現，可以比較唔同嘅交通方式。",
+      "file": "streetRider.mp3",
+      "bytes": 78912,
+      "sha256": "2afadc8d5448cd7d38b61b2d8ed2190c8178cc4c6b1c7f19821c3328a9a60125"
+    },
+    {
+      "id": "streetWalkers",
+      "text": "搵到結伴行人！古代大街除咗有車馬，亦有好多步行嘅人。畫中幾個人結伴同行，令條街充滿生活氣息。",
+      "file": "streetWalkers.mp3",
+      "bytes": 75600,
+      "sha256": "f7b81264567be87131fba2f308e39f3bd19a6a0425848259c977b6320631e0e6"
+    },
+    {
+      "id": "streetPavilion",
+      "text": "搵到路旁涼亭！涼亭有頂、有柱，四周較通爽，可以休息同傾偈。畫中可以見到亭內人物，留意佢同旁邊封閉屋舍嘅分別。",
+      "file": "streetPavilion.mp3",
+      "bytes": 88272,
+      "sha256": "0480919fc20bc54054ea646c43afdc5d16a31764a7c5984b7426063463bac428"
     },
     {
       "id": "shop",
@@ -48,6 +104,34 @@
       "sha256": "cd76129d52383207eafc43668c6062d1446e8fe73c25e2d34af497bae538341e"
     },
     {
+      "id": "marketCarriers",
+      "text": "搵到抬貨隊伍！多人抬貨時，要分擔重量同配合步伐。畫中長架上放住貨物，帶出街市運送物件嘅情景。",
+      "file": "marketCarriers.mp3",
+      "bytes": 78768,
+      "sha256": "44c7ac05550a8db18e0e24e5ca333a2c4f28426b41c896199740fefa82eaae60"
+    },
+    {
+      "id": "marketJars",
+      "text": "搵到店前陶罐！陶罐可以用嚟盛載同存放物件，唔同形狀有唔同用途。畫中罐子集中擺喺店前，方便客人觀看。",
+      "file": "marketJars.mp3",
+      "bytes": 84528,
+      "sha256": "93adb9e9796e6525e430adcb56040262e64445364513a45e949252db93bbd71d"
+    },
+    {
+      "id": "marketDog",
+      "text": "搵到街邊小狗！古畫唔只畫人同建築，亦會畫出街上嘅動物。呢隻小狗令街市更有生活感，試吓留意佢嘅身形同尾巴。",
+      "file": "marketDog.mp3",
+      "bytes": 81648,
+      "sha256": "c49d9c6c92dbfcf75918fdc5b84b3fe9347de6671a2d5005496a54879351d779"
+    },
+    {
+      "id": "marketGoodsCart",
+      "text": "搵到運貨木車！木車用車輪承托貨物，可以減少搬運時嘅負擔。畫中運貨車駛過店舖前面，反映買賣同交通息息相關。",
+      "file": "marketGoodsCart.mp3",
+      "bytes": 87552,
+      "sha256": "4f7b63c9a24e757dd87f933177dbc49fe019a1c8e10670c364b06f72380afb25"
+    },
+    {
       "id": "gardenBridge",
       "text": "搵到石橋台階！石橋將兩邊嘅道路連接起來，台階方便行人上落。橋邊嘅欄杆可以保護行人，減少跌落水嘅危險。",
       "file": "gardenBridge.mp3",
@@ -62,6 +146,34 @@
       "sha256": "4e521a0ff1db3ceb0619c420587f5bbbbd89122cd87a0057f298c9b64d4f09af"
     },
     {
+      "id": "gardenPavilion",
+      "text": "搵到水邊涼亭！水邊涼亭可以休息，亦方便欣賞河景。畫中亭子有柱同欄杆，下面嘅石造平台托住建築。",
+      "file": "gardenPavilion.mp3",
+      "bytes": 79056,
+      "sha256": "87c9af14112243e3b70ceeb40bba3faf3441beb309773caa9c3f1f530588b491"
+    },
+    {
+      "id": "gardenGate",
+      "text": "搵到紅柱園門！園門將牆內外嘅空間連接起來，俾人進出。畫中屋頂同紅柱將入口突出，方便人搵到通道。",
+      "file": "gardenGate.mp3",
+      "bytes": 78768,
+      "sha256": "080f62926ed874956a3d2ddf42616c191c5dda49a2b90da18b68b02e97abc71a"
+    },
+    {
+      "id": "gardenOldTree",
+      "text": "搵到河邊老樹！樹木可以遮蔭，亦令園林有高低疏密嘅變化。畫中彎曲嘅樹幹同樹根，係畫家表現老樹形態嘅細節。",
+      "file": "gardenOldTree.mp3",
+      "bytes": 82656,
+      "sha256": "ec077c44b1d4bc348df0bb99a934e35e5a01fb3187836f4369186d50bdcb7994"
+    },
+    {
+      "id": "gardenArch",
+      "text": "搵到河岸牌坊！牌坊可以作為地方嘅標誌，令人遠遠就見到入口位置。畫中牌坊附近聚集人物，亦帶出道路上嘅活動。",
+      "file": "gardenArch.mp3",
+      "bytes": 83952,
+      "sha256": "a4cdbdda5be9f23c0c33e253b0f14de6ace425a058960733cbe862b3421bacd0"
+    },
+    {
       "id": "tower",
       "text": "搵到高高樓閣！樓閣可以登高望遠，亦係園林入面嘅景觀。畫中一層層嘅屋頂同露台，令建築比旁邊嘅樹木更突出。",
       "file": "tower.mp3",
@@ -74,6 +186,34 @@
       "file": "archway.mp3",
       "bytes": 91152,
       "sha256": "c2652309f1df0f3cc25eca8f2b74ee97afe4c794f8dae8f50e9a9a51ddfd9e73"
+    },
+    {
+      "id": "deepRedGate",
+      "text": "搵到園中紅門！園門係園林空間嘅出入口，亦有裝飾作用。畫中紅柱、屋頂同石級連在一起，帶住視線走入庭園。",
+      "file": "deepRedGate.mp3",
+      "bytes": 83664,
+      "sha256": "ce6c79c00f2fa5a60506dff4d218a8b2ce9dddfa3fb66834a5811de27dd030c9"
+    },
+    {
+      "id": "deepPine",
+      "text": "搵到盤根老松！松樹嘅枝幹同針狀葉叢，係古畫常見嘅景物。畫中老松橫跨建築前面，增加前後層次同園林趣味。",
+      "file": "deepPine.mp3",
+      "bytes": 84096,
+      "sha256": "4978cb2fc081fda4e5436d1161c6fabf00e5ffd192b7cd016c8deb1ca6fe15cd"
+    },
+    {
+      "id": "deepRockery",
+      "text": "搵到園林假山！假山用石頭組成山石景觀，令園林有高低起伏。畫中石山同道路、樹木放在一起，令空間更有變化。",
+      "file": "deepRockery.mp3",
+      "bytes": 84528,
+      "sha256": "8b2c0207fa9a5a956e8aed328016312e26a31a2def190c3a6e3276cfff9ef203"
+    },
+    {
+      "id": "deepSmallBoat",
+      "text": "搵到河上小船！小船可以喺河面載人往來。畫中細長嘅船身同船上人物，令水面多咗一段活動中嘅生活故事。",
+      "file": "deepSmallBoat.mp3",
+      "bytes": 79920,
+      "sha256": "18368fe5ece3ab420796e3aa8061fd19cd16cb84e7dcce1b3ead36d533999e63"
     },
     {
       "id": "complete",

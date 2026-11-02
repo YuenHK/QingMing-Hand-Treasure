@@ -4,16 +4,20 @@ import {createScrollAtlas} from './scroll-atlas.mjs';
 import {createReveal,createTourGlow,createLensSparkles,REVEAL_SECONDS} from './reveal.mjs';
 import {createGameAudio} from './game-audio.mjs';
 import {createInputRouter} from './input-router.mjs';
+import {createRoundPicker} from './round-selection.mjs';
 const audio=createGameAudio();
 const inputRouter=createInputRouter();
-const W=1280,H=720,VIEW=1646,SCROLL_W=30000,$=id=>document.getElementById(id),chapters=window.PORTAL_CHAPTERS;
+const W=1280,H=720,VIEW=1646,SCROLL_W=30000,$=id=>document.getElementById(id),chapterPool=window.PORTAL_CHAPTERS;
+let roundStorage;try{roundStorage=window.localStorage;}catch{}
+const nextRound=createRoundPicker(chapterPool,{storage:roundStorage});
+let chapters=chapterPool;
 const canvas=$('stage'),ctx=canvas.getContext('2d'),surface=document.createElement('canvas'),dim=document.createElement('canvas'),scratch=document.createElement('canvas');
 for(const c of [surface,dim,scratch]){c.width=W;c.height=H;}
 let journey=createJourney(chapters),pointer={x:.5,y:.5,active:false,source:'mouse'},viewX=chapters[0].x,last=performance.now(),lastInput=0,dwell=0,hover=-1,uiHover='',uiTime=0,frames=0,travel=null,searchArmed=true,searchOrigin=null,lastHint=0,artReady=false,celebration=null,recap=null,replayFinished=false;
 let dimDirty=true,stageDirty=true,cachedView=NaN,lastIntro=-Infinity,menuArmed=false,menuOrigin=null;
 const introCanvas=$('welcomeBackdrop'),introInk=introCanvas.getContext('2d');
 const reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches||false;
-const totalClues=chapters.reduce((n,c)=>n+c.targets.length,0);
+const totalClues=chapterPool.length*2;
 const reward=$('rewardVideo');
 let artPan=0,artOverflow=0;
 function positionPainting(){const r=$('paintingWrap').getBoundingClientRect(),w=parseFloat(canvas.style.width);canvas.style.left=(artOverflow?-artPan:(r.width-w)/2)+'px';}
@@ -41,7 +45,7 @@ function updateCopy(){
  $('back').hidden=true;$('scrollPosition').hidden=true;$('exploreHint').hidden=true;
 }
 function haltFilm(){reward.pause();reward.removeAttribute('src');reward.load();reward.hidden=true;}
-function reset(){lensSparkles.clear();audio.setCelebrating(false);audio.stopNarration();haltFilm();menuOrigin=pointerClient();menuArmed=false;input(.5,.5,false,'none');journey=createJourney(chapters);viewX=chapters[0].x;travel=null;celebration=null;recap=null;replayFinished=false;artPan=artOverflow/2;positionPainting();dwell=0;hover=-1;uiTime=0;uiHover='';searchArmed=true;$('notice').hidden=true;$('completionGesture').hidden=true;$('rewardMedia').hidden=false;$('travelBanner').hidden=true;$('skipReplay').hidden=true;$('mainView').classList.remove('is-exploring','is-celebrating');$('welcome').hidden=false;lastIntro=-Infinity;cacheView();updateCopy();fitWelcome();}
+function reset(){chapters=nextRound();lensSparkles.clear();audio.setCelebrating(false);audio.stopNarration();haltFilm();menuOrigin=pointerClient();menuArmed=false;input(.5,.5,false,'none');journey=createJourney(chapters);viewX=chapters[0].x;travel=null;celebration=null;recap=null;replayFinished=false;artPan=artOverflow/2;positionPainting();dwell=0;hover=-1;uiTime=0;uiHover='';searchArmed=true;$('notice').hidden=true;$('completionGesture').hidden=true;$('rewardMedia').hidden=false;$('travelBanner').hidden=true;$('skipReplay').hidden=true;$('mainView').classList.remove('is-exploring','is-celebrating');$('welcome').hidden=false;lastIntro=-Infinity;cacheView();updateCopy();fitWelcome();}
 function detail(target){if(!target)return;const d=$('detailCanvas').getContext('2d'),cx=chapters[journey.chapter].x+target.x*VIEW,cy=target.y*926,cw=500,ch=234;atlas.draw(d,Math.max(0,Math.min(SCROLL_W-cw,cx-cw/2)),Math.max(0,Math.min(926-ch,cy-ch/2)),cw,ch,0,0,640,300);}
 function showDiscovery(i){
  if(!discover(journey,chapters,i))return;lensSparkles.clear();const c=chapters[journey.chapter],t=c.targets[i],n=journey.found[journey.chapter].length;
