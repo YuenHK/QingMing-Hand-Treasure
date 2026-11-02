@@ -56,11 +56,13 @@ test('hand selection works on the last dialog and restart returns to the introdu
  }
  assert.equal(state().total,10);assert.equal(state().mode,'burn');advance(3.05);
  assert.equal(state().mode,'recap');assert.equal(state().replaySeconds,48);
+ assert.equal(JSON.parse(get('audioControls').dataset.state).celebrating,true,'celebratory music lasts through the tour');
  const replayFilterCount=grayFilters;
  document.hidden=true;advance(20);document.hidden=false;
  advance(47.5);assert.equal(state().mode,'recap','background time must not skip the tour');
  window.portalInput(.02,.98,true,'mouse');advance(.7);assert.equal(state().mode,'complete');
  assert.equal(grayFilters,replayFilterCount,'the color tour must not rebuild grayscale frames');
+ assert.equal(JSON.parse(get('audioControls').dataset.state).celebrating,false,'completion dialog returns to calm music');
  assert.match(get('continue').textContent,/再玩一次/);assert.doesNotMatch(get('noticeText').textContent,/自由|漫遊/);
  advance(1.8,hand(.5,640/720));assert.equal(state().mode,'search');assert.equal(state().chapter,0);assert.equal(state().total,0);
  assert.equal(get('welcome').hidden,false,'replay starts at the instructions');assert.equal(stopped,false,'restart must retain the live camera');

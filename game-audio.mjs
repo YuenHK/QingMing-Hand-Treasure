@@ -2,10 +2,11 @@
 export function createGameAudio(){
  const $=id=>document.getElementById(id),voice=$('narrationAudio');
  const narration=true;
- let context,musicGain,effectGain,master,timer,nextBeat=0,beat=0,chapter=0,started=false,music=true,current='',speaking=false,token=0;
+ let context,musicGain,effectGain,master,timer,nextBeat=0,beat=0,chapter=0,started=false,music=true,current='',speaking=false,token=0,celebrating=false;
+ const celebrationMelody=[0,4,7,12,9,7,4,7,9,12,16,14,12,9,7,4];
  const melodies=[[0,null,4,7,null,9,7,4,2,null,4,null,0,null,-3,null],[4,null,7,9,null,12,9,7,4,2,null,0,2,null,4,null],[7,4,null,2,0,null,4,7,9,null,7,4,2,null,0,null],[0,null,2,null,4,7,null,4,2,null,-3,null,0,null,2,null],[12,null,9,7,4,null,7,9,12,null,14,12,9,null,7,null]];
  function report(status){
-  $('audioControls').dataset.state=JSON.stringify({started,context:context?.state||'idle',music,narration,speaking,current,chapter,musicTarget:music?(speaking?.6:1.2):0});
+  $('audioControls').dataset.state=JSON.stringify({started,context:context?.state||'idle',music,narration,speaking,current,chapter,celebrating,musicTarget:music?(speaking?.6:1.2):0});
   if(status)$('narrationStatus').textContent=status;
  }
  function mix(){if(musicGain)musicGain.gain.setTargetAtTime(music?(speaking?.6:1.2):0,context.currentTime,.22);report();}
@@ -21,11 +22,12 @@ export function createGameAudio(){
   if(!context||context.state!=='running'||document.hidden)return;
   if(nextBeat<context.currentTime-.2)nextBeat=context.currentTime+.05;
   while(nextBeat<context.currentTime+.45){
-   const bar=Math.floor(beat/16),i=beat%16,note=melodies[chapter%melodies.length][i];
-   if(note!==null)tone(note,nextBeat,2.6,i%4===0?.22:.15);
-   if(i%8===0)tone([0,-5,-3,-5][bar%4]-12,nextBeat,3.4,.16);
-   if(i===4&&bar%2===1)tone([12,9,7,14][bar%4],nextBeat,2,.045,musicGain,true);
-   nextBeat+=.48;beat++;
+   const bar=Math.floor(beat/16),i=beat%16,note=(celebrating?celebrationMelody:melodies[chapter%melodies.length])[i];
+   if(note!==null)tone(note,nextBeat,celebrating?1.6:2.6,i%4===0?.22:.15);
+   if(i%8===0)tone([0,-5,-3,-5][bar%4]-12,nextBeat,celebrating?1.9:3.4,.16);
+   if(celebrating&&i%8===4)tone(note+12,nextBeat,1.2,.06);
+   else if(i===4&&bar%2===1)tone([12,9,7,14][bar%4],nextBeat,2,.045,musicGain,true);
+   nextBeat+=celebrating?.32:.48;beat++;
   }
  }
  async function start(){
@@ -59,5 +61,5 @@ export function createGameAudio(){
  window.addEventListener('pagehide',()=>{clearInterval(timer);voice.pause();context?.close();});
  report('搵到物件，自動廣東話講解');
  start();
- return {start,narrate,stopNarration,effect,setChapter(value){chapter=value;report();}};
+ return {start,narrate,stopNarration,effect,setChapter(value){chapter=value;report();},setCelebrating(value){value=!!value;if(value===celebrating)return;celebrating=value;beat=0;if(context)nextBeat=context.currentTime+.05;report();}};
 }

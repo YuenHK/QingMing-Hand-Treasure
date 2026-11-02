@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createScrollAtlas} from '../scroll-atlas.mjs';
-import {createReveal,REVEAL_SECONDS} from '../reveal.mjs';
+import {createReveal,createTourGlow,REVEAL_SECONDS} from '../reveal.mjs';
 
 test('a view crossing a tile boundary stays visible while small textures load',()=>{
  const images=[],draws=[];const makeImage=()=>{const image={naturalWidth:4096,naturalHeight:126};images.push(image);return image;};
@@ -25,4 +25,15 @@ test('the reveal keeps a color frame underneath and has a bounded draw budget wi
  const previous=uploads;effect.draw(out,color,dim,1.51);assert.equal(uploads,previous,'mask work is capped at 30fps');
  colors.length=0;effect.draw(out,color,dim,REVEAL_SECONDS);assert.deepEqual(colors,[color],'the final frame must never leave a black mask');
  assert.equal(writes.some(([key,value])=>key==='shadowBlur'&&value>0),false);
+});
+
+test('tour particles reuse one small sprite and stay within a fixed drawing budget',()=>{
+ const canvases=[],draws=[],writes=[];
+ const ctx=new Proxy({createRadialGradient:()=>({addColorStop(){}}),drawImage(...args){draws.push(args);}}, {get:(o,k)=>o[k]??(()=>{}),set:(o,k,v)=>{writes.push([k,v]);o[k]=v;return true;}});
+ const glow=createTourGlow(1280,720,()=>{const canvas={getContext:()=>ctx};canvases.push(canvas);return canvas;});
+ glow.draw(ctx,0);const first=draws.map(d=>d.slice(1));draws.length=0;glow.draw(ctx,20);
+ assert.equal(canvases.length,1);assert.equal(canvases[0].width,48);assert.equal(draws.length,28);
+ assert.ok(draws.every(d=>d[0]===canvases[0]&&d.slice(1).every(Number.isFinite)));
+ assert.notDeepEqual(draws.map(d=>d.slice(1)),first,'golden lights drift during the tour');
+ assert.equal(writes.some(([k,v])=>k==='shadowBlur'&&v>0),false);
 });

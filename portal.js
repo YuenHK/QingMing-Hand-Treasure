@@ -1,7 +1,7 @@
 import {createJourney,discover,continueJourney,COMPLETION_TEXT} from './journey-state.mjs';
 import {recapFrame,recapDuration} from './recap.mjs';
 import {createScrollAtlas} from './scroll-atlas.mjs';
-import {createReveal,REVEAL_SECONDS} from './reveal.mjs';
+import {createReveal,createTourGlow,REVEAL_SECONDS} from './reveal.mjs';
 import {createGameAudio} from './game-audio.mjs';
 import {createInputRouter} from './input-router.mjs';
 const audio=createGameAudio();
@@ -41,7 +41,7 @@ function updateCopy(){
  $('back').hidden=true;$('scrollPosition').hidden=true;$('exploreHint').hidden=true;
 }
 function haltFilm(){reward.pause();reward.removeAttribute('src');reward.load();reward.hidden=true;}
-function reset(){audio.stopNarration();haltFilm();menuOrigin=pointerClient();menuArmed=false;input(.5,.5,false,'none');journey=createJourney(chapters);viewX=chapters[0].x;travel=null;celebration=null;recap=null;replayFinished=false;artPan=artOverflow/2;positionPainting();dwell=0;hover=-1;uiTime=0;uiHover='';searchArmed=true;$('notice').hidden=true;$('completionGesture').hidden=true;$('rewardMedia').hidden=false;$('travelBanner').hidden=true;$('skipReplay').hidden=true;$('mainView').classList.remove('is-exploring','is-celebrating');$('welcome').hidden=false;lastIntro=-Infinity;cacheView();updateCopy();fitWelcome();}
+function reset(){audio.setCelebrating(false);audio.stopNarration();haltFilm();menuOrigin=pointerClient();menuArmed=false;input(.5,.5,false,'none');journey=createJourney(chapters);viewX=chapters[0].x;travel=null;celebration=null;recap=null;replayFinished=false;artPan=artOverflow/2;positionPainting();dwell=0;hover=-1;uiTime=0;uiHover='';searchArmed=true;$('notice').hidden=true;$('completionGesture').hidden=true;$('rewardMedia').hidden=false;$('travelBanner').hidden=true;$('skipReplay').hidden=true;$('mainView').classList.remove('is-exploring','is-celebrating');$('welcome').hidden=false;lastIntro=-Infinity;cacheView();updateCopy();fitWelcome();}
 function detail(target){if(!target)return;const d=$('detailCanvas').getContext('2d'),cx=chapters[journey.chapter].x+target.x*VIEW,cy=target.y*926,cw=500,ch=234;atlas.draw(d,Math.max(0,Math.min(SCROLL_W-cw,cx-cw/2)),Math.max(0,Math.min(926-ch,cy-ch/2)),cw,ch,0,0,640,300);}
 function showDiscovery(i){
  if(!discover(journey,chapters,i))return;const c=chapters[journey.chapter],t=c.targets[i],n=journey.found[journey.chapter].length;
@@ -54,7 +54,7 @@ function showDiscovery(i){
  $('notice').hidden=false;audio.effect('found');audio.narrate(t.id);
 }
 function finish(){
- journey.mode='complete';replayFinished=true;uiHover='';uiTime=0;dwell=0;input(.5,.5,false,'none');$('skipReplay').hidden=true;$('travelBanner').hidden=true;$('mainView').classList.remove('is-celebrating');$('discoveryKicker').textContent='尋寶清明上河圖 · 主線完成';$('discoveryCount').textContent=totalClues+' / '+totalClues;$('noticeTitle').textContent='十個線索，穿越一卷古城';$('noticeText').textContent=COMPLETION_TEXT;$('continue').textContent='再玩一次 · 返回說明';$('rewardMedia').hidden=true;$('completionGesture').hidden=false;$('notice').dataset.phase='complete';$('notice').hidden=false;$('notice').scrollTop=0;fitCompletion();audio.narrate('complete');
+ audio.setCelebrating(false);journey.mode='complete';replayFinished=true;uiHover='';uiTime=0;dwell=0;input(.5,.5,false,'none');$('skipReplay').hidden=true;$('travelBanner').hidden=true;$('mainView').classList.remove('is-celebrating');$('discoveryKicker').textContent='尋寶清明上河圖 · 主線完成';$('discoveryCount').textContent=totalClues+' / '+totalClues;$('noticeTitle').textContent='十個線索，穿越一卷古城';$('noticeText').textContent=COMPLETION_TEXT;$('continue').textContent='再玩一次 · 返回說明';$('rewardMedia').hidden=true;$('completionGesture').hidden=false;$('notice').dataset.phase='complete';$('notice').hidden=false;$('notice').scrollTop=0;fitCompletion();audio.narrate('complete');
 }
 function next(){
  audio.stopNarration();haltFilm();$('notice').hidden=true;$('rewardMedia').hidden=false;
@@ -105,15 +105,15 @@ function uiDwell(dt){
  for(const id of ids){const b=$(id),r=b.getBoundingClientRect(),visible=!b.disabled&&r.width>0&&r.height>0;if(pointer.active&&visible&&pc.x>=r.left&&pc.x<=r.right&&pc.y>=r.top&&pc.y<=r.bottom)hit=id;else b.style.background='';}
  if(hit!==uiHover){uiHover=hit;uiTime=0;}else if(hit){uiTime+=dt;$(hit).style.background=`linear-gradient(90deg,#8a794b ${Math.min(100,uiTime/1.25*100)}%,#273224 0)`;if(uiTime>=1.25){uiTime=0;uiHover='';$(hit).click();}}
 }
-const reveal=createReveal(W,H);
-function beginCelebration(){audio.stopNarration();audio.effect('victory');cacheDim();artPan=artOverflow/2;positionPainting();journey.mode='burn';celebration={start:performance.now()};$('notice').hidden=true;$('skipReplay').hidden=false;$('mainView').classList.add('is-celebrating');$('travelBanner').hidden=false;$('travelBanner').textContent='十個線索齊集 · 讓古城甦醒';$('help').textContent='通關時刻';$('taskTitle').textContent='灰幕化成光，古城現真色';$('taskText').textContent='';dwell=0;uiTime=0;uiHover='';}
+const reveal=createReveal(W,H),tourGlow=createTourGlow(W,H);
+function beginCelebration(){audio.setCelebrating(true);audio.stopNarration();audio.effect('victory');cacheDim();artPan=artOverflow/2;positionPainting();journey.mode='burn';celebration={start:performance.now()};$('notice').hidden=true;$('skipReplay').hidden=false;$('mainView').classList.add('is-celebrating');$('travelBanner').hidden=false;$('travelBanner').textContent='十個線索齊集 · 讓古城甦醒';$('help').textContent='通關時刻';$('taskTitle').textContent='灰幕化成光，古城現真色';$('taskText').textContent='';dwell=0;uiTime=0;uiHover='';}
 function drawBurn(now){
  const elapsed=(now-celebration.start)/1000;reveal.draw(ctx,surface,dim,elapsed);
  if(elapsed>=REVEAL_SECONDS){celebration=null;journey.mode='recap';recap={elapsed:0,index:-1};$('help').textContent='全彩回望 · 由城內到城外';$('travelBanner').textContent='回望古城 · 由內到外';}
 }
 function drawRecap(dt){
  if(!document.hidden)recap.elapsed+=dt;
- const frame=recapFrame(chapters,recap.elapsed);viewX=frame.x;cacheView();ctx.drawImage(surface,0,0);
+ const frame=recapFrame(chapters,recap.elapsed);viewX=frame.x;cacheView();ctx.drawImage(surface,0,0);tourGlow.draw(ctx,recap.elapsed);
  if(frame.done){recap=null;finish();return;}
  if(recap.index!==frame.index){recap.index=frame.index;$('taskTitle').textContent=chapters[frame.index].name;$('taskText').textContent='';$('travelBanner').textContent='慢慢回望 · '+chapters[frame.index].name;}
 }
