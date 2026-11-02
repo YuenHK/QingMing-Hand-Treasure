@@ -59,11 +59,11 @@ function drawHand(points) {
   if(!points)return;
   const scale=Math.min(overlay.width/(video.videoWidth||640),overlay.height/(video.videoHeight||480)),dw=(video.videoWidth||640)*scale,dh=(video.videoHeight||480)*scale;
   const xy=p=>[(overlay.width-dw)/2+(mirror?1-p.x:p.x)*dw,(overlay.height-dh)/2+p.y*dh];
-  ink.save();ink.shadowColor='#07110ed0';ink.shadowBlur=3;ink.strokeStyle='#f5d793';ink.lineWidth=2.7;ink.lineCap='round';ink.lineJoin='round';
+  ink.save();ink.shadowColor='#07110ed0';ink.shadowBlur=3;ink.strokeStyle='#00e676';ink.lineWidth=2.7;ink.lineCap='round';ink.lineJoin='round';
   for(const chain of connections){ink.beginPath();chain.forEach((i,j)=>ink[j?'lineTo':'moveTo'](...xy(points[i])));ink.stroke();}
-  ink.fillStyle='#fff1c4';for(const p of points){ink.beginPath();ink.arc(...xy(p),3.6,0,Math.PI*2);ink.fill();}
+  ink.fillStyle='#39ff6a';for(const p of points){ink.beginPath();ink.arc(...xy(p),3.6,0,Math.PI*2);ink.fill();}
   const palm=[0,5,9,13,17].reduce((p,i)=>({x:p.x+points[i].x/5,y:p.y+points[i].y/5}),{x:0,y:0});
-  ink.strokeStyle='#e8f5a0';ink.lineWidth=2.5;ink.beginPath();ink.arc(...xy(palm),14,0,Math.PI*2);ink.stroke();ink.restore();
+  ink.strokeStyle='#6cff99';ink.lineWidth=2.5;ink.beginPath();ink.arc(...xy(palm),14,0,Math.PI*2);ink.stroke();ink.restore();
 }
 function result(data) {
   busy=false;diagnostics.frames++;diagnostics.ms=Math.round(data.ms);diagnostics.hands=data.landmarks?1:0;
