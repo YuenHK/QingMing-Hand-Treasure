@@ -5,10 +5,10 @@ export function createGameAudio(){
  let context,musicGain,effectGain,master,timer,nextBeat=0,beat=0,chapter=0,started=false,music=true,current='',speaking=false,token=0;
  const melodies=[[0,null,4,7,null,9,7,4,2,null,4,null,0,null,-3,null],[4,null,7,9,null,12,9,7,4,2,null,0,2,null,4,null],[7,4,null,2,0,null,4,7,9,null,7,4,2,null,0,null],[0,null,2,null,4,7,null,4,2,null,-3,null,0,null,2,null],[12,null,9,7,4,null,7,9,12,null,14,12,9,null,7,null]];
  function report(status){
-  $('audioControls').dataset.state=JSON.stringify({started,context:context?.state||'idle',music,narration,speaking,current,chapter,musicTarget:music?(speaking?.035:.16):0});
+  $('audioControls').dataset.state=JSON.stringify({started,context:context?.state||'idle',music,narration,speaking,current,chapter,musicTarget:music?(speaking?.6:1.2):0});
   if(status)$('narrationStatus').textContent=status;
  }
- function mix(){if(musicGain)musicGain.gain.setTargetAtTime(music?(speaking?.035:.16):0,context.currentTime,.22);report();}
+ function mix(){if(musicGain)musicGain.gain.setTargetAtTime(music?(speaking?.6:1.2):0,context.currentTime,.22);report();}
  function tone(semitone,when,length,volume=.15,bus=musicGain,flute=false){
   if(!context||context.state!=='running')return;
   const frequency=293.665*Math.pow(2,semitone/12),envelope=context.createGain();
