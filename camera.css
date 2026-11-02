@@ -110,3 +110,6 @@ header{gap:14px;align-items:center}
 .dockBottom{margin-top:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap}.dockBottom #audioControls{margin:0}.dockBottom p{width:100%;margin:0;font-size:9px}.dockBottom small{margin-left:auto}
 @media(max-height:760px){#aiDock,#aiLive{gap:8px}.liveCard{padding:7px}.aiIntro p,.reality>p{display:none}.commandCard>p{font-size:9px}.positionCard{min-height:145px}}
 @media(max-height:580px){#aiDock,#aiLive{gap:6px}.positionCard{min-height:120px}.positionCard .analysisView{min-height:70px}.commandCard>p,.dockBottom p{display:none}.positionRows .positionRow{font-size:9px}.dockBottom small{font-size:7px}}
+
+/* A clear exhibition heading; narration stays on without a dock switch. */
+.aiIntro .eyebrow{display:block;font-size:24px;line-height:1.3;font-weight:700;letter-spacing:2px;color:#f1dcaa}

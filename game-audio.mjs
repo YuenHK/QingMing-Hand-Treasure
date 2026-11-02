@@ -1,7 +1,8 @@
 // Original pentatonic score: synthesized locally, with no external music files.
 export function createGameAudio(){
  const $=id=>document.getElementById(id),voice=$('narrationAudio');
- let context,musicGain,effectGain,master,timer,nextBeat=0,beat=0,chapter=0,started=false,music=true,narration=true,current='',speaking=false,token=0;
+ const narration=true;
+ let context,musicGain,effectGain,master,timer,nextBeat=0,beat=0,chapter=0,started=false,music=true,current='',speaking=false,token=0;
  const melodies=[[0,null,4,7,null,9,7,4,2,null,4,null,0,null,-3,null],[4,null,7,9,null,12,9,7,4,2,null,0,2,null,4,null],[7,4,null,2,0,null,4,7,9,null,7,4,2,null,0,null],[0,null,2,null,4,7,null,4,2,null,-3,null,0,null,2,null],[12,null,9,7,4,null,7,9,12,null,14,12,9,null,7,null]];
  function report(status){
   $('audioControls').dataset.state=JSON.stringify({started,context:context?.state||'idle',music,narration,speaking,current,chapter,musicTarget:music?(speaking?.035:.16):0});
@@ -34,11 +35,11 @@ export function createGameAudio(){
    master=context.createGain();master.gain.value=.85;const limiter=context.createDynamicsCompressor();master.connect(limiter).connect(context.destination);
    musicGain=context.createGain();musicGain.gain.value=.001;musicGain.connect(master);effectGain=context.createGain();effectGain.gain.value=.4;effectGain.connect(master);}
    await context.resume();if(started)return;started=true;nextBeat=context.currentTime+.05;mix();schedule();timer=setInterval(schedule,200);report('搵到物件，自動廣東話講解');
-  }catch{report('聲音未能啟動，可按「聽講解」重試');}
+  }catch{report('聲音未能啟動，可輕按畫面重試');}
  }
- function stopNarration(){token++;voice.pause();voice.currentTime=0;speaking=false;mix();report(narration?'搵到物件，自動廣東話講解':'廣東話自動講解已關');}
+ function stopNarration(){token++;voice.pause();voice.currentTime=0;speaking=false;mix();report('搵到物件，自動廣東話講解');}
  async function narrate(id){
-  stopNarration();current=id;if(!narration){report();return;}
+  stopNarration();current=id;
   const request=token;voice.src='assets/narration/'+id+'.mp3';voice.volume=1;speaking=true;mix();report('廣東話講解中…');
   try{await voice.play();if(request!==token)return;report('廣東話講解中…');}
   catch{if(request!==token)return;speaking=false;mix();report('按「再聽一次」播放廣東話');}
@@ -51,11 +52,10 @@ export function createGameAudio(){
   notes.forEach((n,i)=>tone(n,context.currentTime+.02+i*(kind==='victory'?.19:.12),kind==='victory'?2.8:1.5,.3,effectGain));
  }
  $('musicToggle').onclick=async()=>{await start();music=!music;$('musicToggle').textContent=music?'配樂：開':'配樂：關';$('musicToggle').setAttribute('aria-pressed',String(music));mix();};
- $('narrationToggle').onclick=async()=>{await start();narration=!narration;$('narrationToggle').textContent=narration?'講解：開':'講解：關';$('narrationToggle').setAttribute('aria-pressed',String(narration));if(!narration)stopNarration();else if(!$('notice').hidden&&current)narrate(current);else report('搵到物件，自動廣東話講解');};
- $('replayNarration').onclick=async()=>{await start();if(!narration){narration=true;$('narrationToggle').textContent='講解：開';$('narrationToggle').setAttribute('aria-pressed','true');}if(current)narrate(current);};
+ $('replayNarration').onclick=async()=>{await start();if(current)narrate(current);};
  $('welcomeCamera').addEventListener('click',start);
  for(const name of ['pointerdown','keydown'])document.addEventListener(name,event=>{if(event.isTrusted)start();});
- document.addEventListener('visibilitychange',()=>{if(document.hidden){stopNarration();context?.suspend();}else if(started){context.resume().then(()=>{nextBeat=context.currentTime+.05;schedule();report();}).catch(()=>report('按聲音按鈕恢復配樂'));}});
+ document.addEventListener('visibilitychange',()=>{if(document.hidden){stopNarration();context?.suspend();}else if(started){context.resume().then(()=>{nextBeat=context.currentTime+.05;schedule();report();}).catch(()=>report('輕按畫面恢復配樂'));}});
  window.addEventListener('pagehide',()=>{clearInterval(timer);voice.pause();context?.close();});
  report('搵到物件，自動廣東話講解');
  start();
