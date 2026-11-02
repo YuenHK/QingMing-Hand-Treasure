@@ -2,7 +2,7 @@
 
 用手掌揮開迷霧，走入古畫尋寶。適合小朋友與家長一齊玩嘅廣東話網頁遊戲，亦展示 AI 點樣將鏡頭入面嘅手部關鍵點變成操作指令。
 
-**[立即遊玩](https://yuenhk.github.io/qingming-hand-treasure/)** · 建議用電腦版 Chrome／Edge 配合鏡頭揮手；滑鼠只作輔助操作。
+**[立即遊玩](https://yuenhk.github.io/QingMing-Hand-Treasure/)** · 建議用電腦版 Chrome／Edge 配合鏡頭揮手；滑鼠只作輔助操作。
 
 ## 宣傳海報
 
@@ -65,3 +65,5 @@ GitHub Pages 使用 `.github/workflows/pages.yml`：先跑自動測試，再校�
 右欄下方以三步大字說明「手部關鍵點辨識 → 座標映射與平滑處理 → 停留判定與事件觸發」，每步附簡短說明，方便工作人員講解。已移除右欄底部的本機處理提示文字；影像處理方式不受版面文字調整影響。
 
 啟動區以較大的「舉手提示 → 停留說明 → 開始按鈕」排列，移除介紹卡最底的鏡頭提示。尋寶時只保留少量閃光星點，不畫金色連線或拖尾；星點約 0.6 秒內淡出，最多保留 8 點，停止移動時不會持續新增，重玩時清除。
+
+正式遊戲網址採用新專案名稱 `QingMing-Hand-Treasure`。原來全小階網址 `https://yuenhk.github.io/qingming-hand-treasure/` 由 [相容轉址專案](https://github.com/YuenHK/YuenHK.github.io) 自動轉到正式網址，保留查詢參數及書籤，讓已印製的 QR code 繼續使用。
