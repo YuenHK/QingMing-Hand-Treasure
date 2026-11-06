@@ -118,7 +118,11 @@ function fitCompletion(){const n=$('notice'),r=$('mainView').getBoundingClientRe
 const noticeObserver=new ResizeObserver(fitCompletion);noticeObserver.observe($('notice'));noticeObserver.observe($('mainView'));
 $('aboutPainting').onclick=()=>{audio.stopNarration();$('welcome').hidden=false;fitWelcome();};
 window.addEventListener('keydown',e=>{if(e.target.matches('input,select,textarea'))return;if(e.key.toLowerCase()==='r')reset();});
-function ring(x,y,p,r=32,color='#f2d697'){ctx.save();ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.stroke();ctx.lineWidth=6;ctx.beginPath();ctx.arc(x,y,r+7,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,p));ctx.stroke();ctx.restore();}
+function ring(x,y,p,r=32,color='#f2d697'){ctx.save();ctx.strokeStyle='#07110edd';ctx.lineWidth=10;ctx.beginPath();ctx.arc(x,y,r+7,0,Math.PI*2);ctx.stroke();ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.stroke();ctx.lineWidth=6;ctx.lineCap='round';ctx.beginPath();ctx.arc(x,y,r+7,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,p));ctx.stroke();ctx.restore();}
+// Dwell rings are the final painting layer, above both players' lenses and hints.
+function drawDwellRings(){
+ for(const control of controllers()){const state=controlState(control.id),p=paintingPoint(control);if(state.hover>=0&&state.dwell>0&&p.inside)ring(p.x*W,p.y*H,state.dwell/1.8,32,playerColors[control.id]||playerColors[0]);}
+}
 function lens(p,active=pointer.active,color='#efd58d77'){if(!active||!p.inside)return;const x=p.x*W,y=p.y*H,r=116,fx=scratch.getContext('2d');fx.clearRect(0,0,W,H);fx.drawImage(surface,0,0);fx.globalCompositeOperation='destination-in';const g=fx.createRadialGradient(x,y,r*.6,x,y,r*1.35);g.addColorStop(0,'#fff');g.addColorStop(1,'#fff0');fx.fillStyle=g;fx.fillRect(0,0,W,H);fx.globalCompositeOperation='source-over';ctx.drawImage(scratch,0,0);ctx.strokeStyle=color;ctx.lineWidth=1;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.stroke();}
 function search(dt){
  cacheDim();
@@ -133,7 +137,7 @@ function search(dt){
   // A visible edge target must remain selectable even on a narrow display.
   const candidates=c.targets.map((t,i)=>({i,t,dist:Math.hypot((p.x-t.x)*W,(p.y-t.y)*H),screenX:artRect.left+t.x*artRect.width})).filter(o=>!found.includes(o.i)&&o.dist<o.t.r*W&&o.screenX>=mainRect.left+12&&o.screenX<=mainRect.right-12).sort((a,b)=>a.dist-b.dist);
   const hit=p.inside&&state.searchArmed&&$('welcome').hidden&&$('cameraPanel').hidden?candidates[0]?.i??-1:-1;
-  if(hit!==state.hover){state.hover=hit;state.dwell=0;}else if(hit>=0){state.dwell+=dt;ring(p.x*W,p.y*H,state.dwell/1.8,32,color);if(state.dwell>=1.8)hits.push(hit);}else state.dwell=0;
+  if(hit!==state.hover){state.hover=hit;state.dwell=0;}else if(hit>=0){state.dwell+=dt;if(state.dwell>=1.8)hits.push(hit);}else state.dwell=0;
   if(state.dwell>dwell||hover<0&&hit>=0){hover=hit;dwell=state.dwell;}
  }
  if(hits.length){const unique=[...new Set(hits)];pendingDiscoveries=unique.slice(1);showDiscovery(unique[0]);return;}
@@ -207,7 +211,7 @@ function draw(now){
   else if(journey.mode==='transition'&&travel){const t=Math.min(1,(now-travel.start)/3200),ease=t*t*(3-2*t);viewX=travel.from+(travel.to-travel.from)*ease;cacheView();ctx.drawImage(surface,0,0);if(t===1){travel=null;journey.mode='search';$('travelBanner').hidden=true;dwell=0;clearDwells(false);}}
   else if(journey.mode==='search')search(dt);
   else{ctx.drawImage(surface,0,0);ctx.fillStyle='#0005';ctx.fillRect(0,0,W,H);}
-  if($('welcome').hidden){if(journey.mode==='search')lensSparkles.draw(ctx,pointer.active&&p.inside?{x:p.x*W,y:p.y*H}:null,now/1000);vignette();drawHint(now);}
+  if($('welcome').hidden){if(journey.mode==='search')lensSparkles.draw(ctx,pointer.active&&p.inside?{x:p.x*W,y:p.y*H}:null,now/1000);vignette();drawHint(now);if(journey.mode==='search')drawDwellRings();}
  }
  uiDwell(dt);const main=$('mainView').getBoundingClientRect(),active=controllers();
  for(let i=0;i<2;i++){const control=active[i],cursor=$(i?'handCursor2':'handCursor');cursor.hidden=!control;if(control){const pc=pointerClient(control);cursor.style.transform=`translate3d(${pc.x-main.left}px,${pc.y-main.top}px,0) translate(-50%,-50%)`;cursor.dataset.player=String(control.id==='mouse'?1:control.id+1);cursor.style.setProperty('--player-color',playerColors[control.id]||playerColors[0]);}}
