@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {createFrameClock,createTrackingSchedule,createTrackingEngine,trackingProfile,readPerformanceSettings,createFrameCapture} from '../performance.mjs';
+import {createFrameClock,createTrackingSchedule,createTrackingEngine,trackingProfile,trackingModel,readPerformanceSettings,createFrameCapture} from '../performance.mjs';
 
 test('a 4K webcam is downsampled before a bitmap is transferred to the worker',async()=>{
  const draws=[],canvas={getContext:()=>({drawImage(...args){draws.push(args);}})},bitmap={};let source;
@@ -16,9 +16,9 @@ test('smooth mode keeps two players and single mode is an explicit choice',()=>{
 });
 test('diagnostic URLs override saved settings without changing or requiring local storage',()=>{
  const storage={getItem:()=>JSON.stringify({profile:'single',engine:'cpu'})};
- assert.deepEqual(readPerformanceSettings({search:'?diagnostics=1&performance=smooth&engine=auto',storage}),{profile:'smooth',engine:'auto',diagnostics:true});
+ assert.deepEqual(readPerformanceSettings({search:'?diagnostics=1&performance=smooth&engine=auto',storage}),{profile:'smooth',engine:'auto',model:'auto',diagnostics:true});
  assert.equal(readPerformanceSettings({storage}).profile,'single');
- assert.deepEqual(readPerformanceSettings({search:'?performance=invalid&engine=invalid',storage:{getItem(){throw Error('Blocked');}}}),{profile:'balanced',engine:'auto',diagnostics:false});
+ assert.deepEqual(readPerformanceSettings({search:'?performance=invalid&engine=invalid',storage:{getItem(){throw Error('Blocked');}}}),{profile:'balanced',engine:'auto',model:'auto',diagnostics:false});
 });
 
 test('high refresh panels render at most thirty times a second without speeding up time',()=>{
@@ -50,14 +50,23 @@ test('CPU failures propagate rather than repeatedly loading models',async()=>{
  await assert.rejects(engine.detect({},1),/Model failure/);assert.equal(count,1);
 });
 
-test('sustained slow GPU inference switches to CPU once after warm-up',async()=>{
- const delegates=[];const engine=await createTrackingEngine(async delegate=>{delegates.push(delegate);return {close(){},detectForVideo:()=>({landmarks:[]})};});
- for(let i=0;i<5;i++)engine.observeLatency(1000);await engine.detect({},1);assert.equal(engine.delegate,'GPU','cold initialization is not treated as sustained slowness');
- for(let i=0;i<8;i++)engine.observeLatency(200);await engine.detect({},2);assert.equal(engine.delegate,'CPU');assert.equal(engine.reason,'slow-gpu');
- for(let i=0;i<20;i++)engine.observeLatency(300);await engine.detect({},3);assert.deepEqual(delegates,['GPU','CPU'],'do not repeatedly reload models');
+test('successful GPU inference stays on GPU even when latency is high',async()=>{
+ const delegates=[];let closed=false;const engine=await createTrackingEngine(async delegate=>{delegates.push(delegate);return {close(){closed=true;},detectForVideo:()=>({landmarks:[]})};});
+ // Regression: this device measured GPU 220ms versus CPU 533ms. High GPU
+ // latency alone must never be taken as evidence that CPU would be faster.
+ for(let i=0;i<30;i++){engine.observeLatency?.(i<5?1000:220);await engine.detect({},i+1);}
+ assert.equal(engine.delegate,'GPU');assert.deepEqual(delegates,['GPU']);assert.equal(closed,false);
 });
-test('one GPU hiccup does not switch a normally fast model',async()=>{
- const engine=await createTrackingEngine(async()=>({detectForVideo:()=>({landmarks:[]})}));
- for(let i=0;i<5;i++)engine.observeLatency(1000);for(const ms of [20,20,500,20,20,20,20,20])engine.observeLatency(ms);
- await engine.detect({},1);assert.equal(engine.delegate,'GPU');
+test('an explicit CPU selection never initializes a GPU detector',async()=>{
+ const delegates=[];const engine=await createTrackingEngine(async delegate=>{delegates.push(delegate);return {detectForVideo:()=>({landmarks:[]})};},{gpu:false});
+ assert.equal(engine.delegate,'CPU');await engine.detect({},1);assert.deepEqual(delegates,['CPU']);
+});
+
+test('Android auto uses Lite, while explicit model and CPU choices stay independent',()=>{
+ assert.equal(trackingModel('auto',true).id,'lite');assert.equal(trackingModel('auto',false).id,'full');
+ assert.equal(trackingModel('full',true).file,'hand_landmarker.task');assert.equal(trackingModel('lite',false).file,'hand_landmarker_lite.task');
+ const storage={getItem:()=>JSON.stringify({model:'full',engine:'cpu'})};
+ assert.equal(readPerformanceSettings({storage}).model,'full');
+ assert.deepEqual(readPerformanceSettings({search:'?model=lite&engine=auto',storage}),{profile:'balanced',engine:'auto',model:'lite',diagnostics:false});
+ assert.equal(readPerformanceSettings({search:'?model=../../other.task'}).model,'auto');
 });

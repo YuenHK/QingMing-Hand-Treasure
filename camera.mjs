@@ -1,7 +1,7 @@
 import {createHandTracker} from './hand-math.mjs';
-import {createTrackingSchedule,readPerformanceSettings,trackingProfile,createFrameCapture} from './performance.mjs?v=20261106-perf2';
+import {createTrackingSchedule,readPerformanceSettings,trackingProfile,trackingModel,createFrameCapture} from './performance.mjs?v=20261106-lite1';
 let preferenceStorage;try{preferenceStorage=window.localStorage;}catch{}
-const settings=readPerformanceSettings({search:window.location?.search||'',storage:preferenceStorage}),android=/Android/i.test(navigator.userAgent||''),config=trackingProfile(settings.profile,android),schedule=createTrackingSchedule(android,settings.profile),capture=createFrameCapture();
+const settings=readPerformanceSettings({search:window.location?.search||'',storage:preferenceStorage}),android=/Android/i.test(navigator.userAgent||''),config=trackingProfile(settings.profile,android),modelConfig=trackingModel(settings.model,android),schedule=createTrackingSchedule(android,settings.profile),capture=createFrameCapture();
 const $=id=>document.getElementById(id);
 $('playerModeHint').textContent=config.numHands===1?'單人模式：舉起一隻手控制光圈':'一人或二人，各舉一手控制光圈';
 $('handCapacityCopy').textContent=config.numHands===1?'單人省電：每隻手 21 個關鍵點。':'每隻手 21 個關鍵點，最多兩手合作尋寶。';
@@ -14,7 +14,7 @@ new ResizeObserver(()=>{const r=positionCanvas.getBoundingClientRect();if(!r.wid
 const connections=[[0,1,2,3,4],[0,5,6,7,8],[5,9,10,11,12],[9,13,14,15,16],[13,17,18,19,20],[0,17]];
 let stream,worker,busy=false,frameId=0,lastFrame=0,lastVideoTime=-1,position=null,generation=0;
 let mode='mouse',ready=false,mirror=true,reach=.15,starting=false,cancelModel=null,lastMotion=0;
-const diagnostics={state:'idle',frames:0,hands:0,ms:0,error:null,delegate:'CPU',averageMs:0,inputWidth:schedule.width,profile:settings.profile,numHands:config.numHands,captureMs:0,roundTripMs:0,trackingFps:0,renderFps:0};
+const diagnostics={state:'idle',frames:0,hands:0,ms:0,error:null,delegate:'CPU',averageMs:0,inputWidth:schedule.width,profile:settings.profile,model:modelConfig.id,numHands:config.numHands,captureMs:0,roundTripMs:0,pendingMs:0,inFlight:0,trackingFps:0,renderFps:0};
 function status(text,state) {
   $('cameraStatus').textContent=text;diagnostics.state=state;
   $('cameraPill').textContent=text;$('cameraPill').dataset.state=state;
@@ -88,7 +88,7 @@ function result(data) {
 }
 function model() {
   return new Promise((resolve,reject)=>{
-    worker=new Worker(new URL('./hand-worker.mjs?v=20261106-perf2',import.meta.url),{type:'module'});
+    worker=new Worker(new URL('./hand-worker.mjs?v=20261106-lite1',import.meta.url),{type:'module'});
     const timer=setTimeout(()=>reject(new Error('追蹤模型載入逾時，請重新試一次。')),45000);
     cancelModel=()=>{clearTimeout(timer);reject(new DOMException('Cancelled','AbortError'));};
     worker.onmessage=({data})=>{
@@ -97,7 +97,7 @@ function model() {
       if(data.type==='error'){clearTimeout(timer);reject(new Error(data.message));if(ready)fail(new Error(data.message));}
     };
     worker.onerror=e=>{clearTimeout(timer);reject(new Error(e.message||'追蹤模型未能啟動'));if(ready)fail(new Error('追蹤模型停止，請重新啟動鏡頭。'));};
-    worker.postMessage({type:'init',numHands:config.numHands,gpu:settings.engine!=='cpu'});
+    worker.postMessage({type:'init',model:modelConfig.id,numHands:config.numHands,gpu:settings.engine!=='cpu'});
   });
 }
 async function pump(now) {
@@ -163,7 +163,7 @@ function reportPerformance(now){
  if(showDiagnostics)updatePerformanceText();
 }
 function updatePerformanceText(){
- $('performanceStats').textContent=`${config.name} · ${diagnostics.delegate} · ${config.numHands} 手\nAI：${diagnostics.ms} ms\n平均：${diagnostics.averageMs} ms\n取像：${diagnostics.captureMs} ms\n總往返：${diagnostics.roundTripMs} ms\n目前等待：${diagnostics.pendingMs} ms\n辨識：${diagnostics.trackingFps} 次／秒\n畫面：${diagnostics.renderFps} fps\n鏡頭：${diagnostics.cameraWidth||0}×${diagnostics.cameraHeight||0} @ ${Math.round(diagnostics.cameraFps||0)}\n輸入：${capture.size.join('×')} · ${diagnostics.inFlight} 張`;
+ $('performanceStats').textContent=`${config.name} · ${diagnostics.delegate} · ${config.numHands} 手\nAI ${modelConfig.label}：${diagnostics.ms} ms\n平均：${diagnostics.averageMs} ms\n取像：${diagnostics.captureMs} ms\n總往返：${diagnostics.roundTripMs} ms\n目前等待：${diagnostics.pendingMs} ms\n辨識：${diagnostics.trackingFps} 次／秒\n畫面：${diagnostics.renderFps} fps\n鏡頭：${diagnostics.cameraWidth||0}×${diagnostics.cameraHeight||0} @ ${Math.round(diagnostics.cameraFps||0)}\n輸入：${capture.size.join('×')} · ${diagnostics.inFlight} 張`;
 }
 function setDiagnostics(visible){
  showDiagnostics=visible;$('performancePanel').hidden=!visible;
@@ -171,12 +171,12 @@ function setDiagnostics(visible){
  $('togglePerformance').textContent=visible?'收起數據':'效能數據';$('togglePerformance').setAttribute('aria-pressed',String(visible));
  if(visible)updatePerformanceText();
 }
-$('performanceMode').value=settings.profile;$('performanceEngine').value=settings.engine;
+$('performanceMode').value=settings.profile;$('performanceEngine').value=settings.engine;$('performanceModel').value=settings.model;
 $('togglePerformance').onclick=()=>setDiagnostics(!showDiagnostics);
 $('hidePerformance').onclick=()=>setDiagnostics(false);
 $('applyPerformance').onclick=()=>{
- const profile=$('performanceMode').value,engine=$('performanceEngine').value;try{preferenceStorage?.setItem('qingming.performance.v2',JSON.stringify({profile,engine}));}catch{}
- const url=new URL(window.location.href);url.searchParams.set('performance',profile);url.searchParams.set('engine',engine);url.searchParams.set('diagnostics','1');window.location.href=url.href;
+ const profile=$('performanceMode').value,engine=$('performanceEngine').value,model=$('performanceModel').value;try{preferenceStorage?.setItem('qingming.performance.v2',JSON.stringify({profile,engine,model}));}catch{}
+ const url=new URL(window.location.href);url.searchParams.set('performance',profile);url.searchParams.set('engine',engine);url.searchParams.set('model',model);url.searchParams.set('diagnostics','1');window.location.href=url.href;
 };
 setDiagnostics(showDiagnostics);
 $('cameraStart').onclick=()=>start();

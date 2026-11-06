@@ -40,9 +40,9 @@ test('single and cooperative controls, clue guidance, complete journey and hand 
  globalThis.Option=class{};globalThis.createImageBitmap=async()=>({close(){}});
  const track={stop(){stopped=true;},getSettings:()=>({deviceId:'test-camera'})};
  const cameraRequests=[];
- Object.defineProperty(globalThis,'navigator',{configurable:true,value:{mediaDevices:{getUserMedia:async options=>{cameraRequests.push(options);if(process.env.QINGMING_TEST_CAMERA_FALLBACK&&cameraRequests.length===1){const error=Error('Camera only supports a larger resolution');error.name='OverconstrainedError';throw error;}return {getTracks:()=>[track],getVideoTracks:()=>[track]};},enumerateDevices:async()=>[]}}});
+ Object.defineProperty(globalThis,'navigator',{configurable:true,value:{userAgent:process.env.QINGMING_TEST_ANDROID?'Android Test Browser':'Desktop Test Browser',mediaDevices:{getUserMedia:async options=>{cameraRequests.push(options);if(process.env.QINGMING_TEST_CAMERA_FALLBACK&&cameraRequests.length===1){const error=Error('Camera only supports a larger resolution');error.name='OverconstrainedError';throw error;}return {getTracks:()=>[track],getVideoTracks:()=>[track]};},enumerateDevices:async()=>[]}}});
  let ai;
- globalThis.Worker=class{constructor(){ai=this;}postMessage(message){if(message.type==='init')queueMicrotask(()=>this.onmessage({data:{type:'ready'}}));}terminate(){}send(points){this.onmessage({data:{type:'result',hands:Array.isArray(points?.[0])?points:points?[points]:[],ms:4}});}};
+ globalThis.Worker=class{constructor(){ai=this;}postMessage(message){if(message.type==='init'){assert.equal(message.model,process.env.QINGMING_TEST_ANDROID?'lite':'full');assert.equal(message.numHands,process.env.QINGMING_TEST_PROFILE==='single'?1:2);queueMicrotask(()=>this.onmessage({data:{type:'ready'}}));}}terminate(){}send(points){this.onmessage({data:{type:'result',hands:Array.isArray(points?.[0])?points:points?[points]:[],ms:4}});}};
  await import('../chapters.js');await import('../portal.js');await import('../camera.mjs');
  for(let i=0;i<15;i++)await Promise.resolve();
  assert.equal(get('welcome').hidden,false);assert.equal(get('liveTag').textContent,'LIVE',get('cameraStatus').textContent);assert.equal(get('welcomeCamera').disabled,false);

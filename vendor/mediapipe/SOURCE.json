@@ -1,5 +1,21 @@
 {
   "package": "1.2.0",
   "tarball": "https://registry.npmjs.org/@mediapipe/tasks-vision/-/tasks-vision-1.2.0.tgz",
-  "model": "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task"
+  "model": "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+  "lite_model": {
+    "file": "hand_landmarker_lite.task",
+    "sha256": "f0a2bfbc4d34f0a13e32e2d1d46f969135283efda693474c6557f9ac33ca842a",
+    "components": [
+      {
+        "source": "https://storage.googleapis.com/mediapipe-assets/hand_landmark_lite.tflite",
+        "sha256": "d7fde8ac11f8ce03f8663775bfc323f4fc9f2a38062b4f4efa142874ef5b2a48"
+      },
+      {
+        "source": "https://storage.googleapis.com/mediapipe-assets/palm_detection_lite.tflite",
+        "sha256": "e9a4aaddf90dda56a87235303cf00e4c2d3fb28725f68fd88772997dac905c18"
+      }
+    ],
+    "adaptation": "Official Lite network weights unchanged. Compatible normalization / tensor / label metadata copied from the official Full Tasks bundle; deterministic ZIP packaging. Apache-2.0, see LICENSE.",
+    "builder": "scripts/build_lite_model.py"
+  }
 }
