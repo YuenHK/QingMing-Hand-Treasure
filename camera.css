@@ -141,3 +141,19 @@ header{gap:14px;align-items:center}
 #fullscreenHint{position:absolute;z-index:61;right:26px;top:calc(var(--artTop,0px) + 82px);max-width:calc(100% - 52px);font:16px/1.5 serif;color:#ffe5a0;background:#152219ed;border:1px solid #a58b50;border-radius:5px;padding:9px 14px;margin:0;pointer-events:none}
 
 #performancePanel{flex:1;min-height:0;overflow:auto}#performancePanel h3{font:20px serif;margin:3px 0 12px;color:#ecd9a5}#performancePanel label{display:block;font-size:14px;margin:10px 0}#performancePanel select{display:block;width:100%;margin-top:5px;padding:8px;background:#263723;color:#f0e2bf;border:1px solid #8c9062;font-size:14px}#performancePanel button{width:100%;font-size:15px;padding:10px;margin:3px 0 10px}#performanceStats{display:block;white-space:pre-wrap;font:14px/1.75 monospace;color:#e7dfbe}.showPerformance .positionCard,.showPerformance .commandCard,.showPerformance .dockBottom{display:none}.showPerformance #cameraPreview{height:clamp(140px,26vh,260px)}.showPerformance #performancePanel p{font-size:13px;line-height:1.6}
+
+/* Diagnostic figures come first and stay visible without scrolling. */
+#aiDock.showPerformance{overflow:hidden;gap:10px}
+.showPerformance .aiIntro{display:none}
+.showPerformance #performancePanel{flex:0 0 auto;overflow:visible;position:relative;padding:12px}
+.showPerformance #performancePanel h3{font:22px/1.3 serif;margin:0 0 8px}
+.showPerformance #performanceStats{font:22px/1.35 "Microsoft JhengHei",sans-serif;font-variant-numeric:tabular-nums;white-space:pre-wrap;overflow-wrap:anywhere;color:#fff0c1}
+.performanceControls{position:relative;margin-top:10px}
+.performanceControls summary{font-size:16px;color:#d6c99d;cursor:pointer;padding:5px 0}
+.performanceControlsBody{position:absolute;z-index:65;top:100%;left:-5px;right:-5px;max-height:45vh;overflow:auto;padding:8px 12px;background:#14261afc;border:1px solid #a58b50;border-radius:5px;box-shadow:0 8px 22px #0008}
+.showPerformance #aiLive{flex:1;min-height:0;overflow:hidden}
+.showPerformance .reality{display:flex;flex-direction:column;flex:1;min-height:0}
+.showPerformance .reality>p{display:none}
+.showPerformance #cameraPreview{flex:1;min-height:55px;height:auto;max-height:none;aspect-ratio:auto}
+@media(max-height:650px){.showPerformance #performanceStats{font-size:20px}.showPerformance #performancePanel{padding:9px}.showPerformance #performancePanel h3{font-size:21px;margin-bottom:6px}.performanceControls{margin-top:6px}}
+@media(max-height:520px){.showPerformance #performanceStats{font-size:20px;line-height:1.25}.showPerformance #performancePanel h3{font-size:20px}.performanceControls summary{font-size:15px;padding:2px 0}}

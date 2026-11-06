@@ -159,10 +159,10 @@ function reportPerformance(now){
  reportFrames=diagnostics.frames;reportGameFrames=gameFrames;lastReport=now;
  diagnostics.inFlight=busy?1:0;diagnostics.pendingMs=busy?Math.round(now-captureStart):0;
  $('cameraPanel').dataset.diagnostics=JSON.stringify(diagnostics);
- if(settings.diagnostics)$('performanceStats').textContent=`${config.name} · ${diagnostics.delegate} · ${config.numHands} 隻手\nAI：${diagnostics.ms} ms（平均 ${diagnostics.averageMs}）\n取像：${diagnostics.captureMs} ms\n總往返：${diagnostics.roundTripMs} ms ｜目前等待：${diagnostics.pendingMs} ms\n辨識：${diagnostics.trackingFps}/秒 ｜畫面：${diagnostics.renderFps} fps\n鏡頭：${diagnostics.cameraWidth||0}×${diagnostics.cameraHeight||0} @ ${Math.round(diagnostics.cameraFps||0)}\n辨識輸入：${capture.size.join('×')} ｜同時處理：${diagnostics.inFlight} 張`;
+ if(settings.diagnostics)$('performanceStats').textContent=`${config.name} · ${diagnostics.delegate} · ${config.numHands} 手\nAI：${diagnostics.ms} ms\n平均：${diagnostics.averageMs} ms\n取像：${diagnostics.captureMs} ms\n總往返：${diagnostics.roundTripMs} ms\n目前等待：${diagnostics.pendingMs} ms\n辨識：${diagnostics.trackingFps} 次／秒\n畫面：${diagnostics.renderFps} fps\n鏡頭：${diagnostics.cameraWidth||0}×${diagnostics.cameraHeight||0} @ ${Math.round(diagnostics.cameraFps||0)}\n輸入：${capture.size.join('×')} · ${diagnostics.inFlight} 張`;
 }
 if(settings.diagnostics){
- $('performancePanel').hidden=false;$('aiDock').classList.add('showPerformance');$('performanceMode').value=settings.profile;$('performanceEngine').value=settings.engine;
+ $('performancePanel').hidden=false;$('aiDock').classList.add('showPerformance');$('welcome').style.right='var(--side)';$('performanceMode').value=settings.profile;$('performanceEngine').value=settings.engine;
  $('applyPerformance').onclick=()=>{
   const profile=$('performanceMode').value,engine=$('performanceEngine').value;try{preferenceStorage?.setItem('qingming.performance.v2',JSON.stringify({profile,engine}));}catch{}
   const url=new URL(window.location.href);url.searchParams.set('performance',profile);url.searchParams.set('engine',engine);window.location.href=url.href;
