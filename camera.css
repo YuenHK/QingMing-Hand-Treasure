@@ -157,3 +157,8 @@ header{gap:14px;align-items:center}
 .showPerformance #cameraPreview{flex:1;min-height:55px;height:auto;max-height:none;aspect-ratio:auto}
 @media(max-height:650px){.showPerformance #performanceStats{font-size:20px}.showPerformance #performancePanel{padding:9px}.showPerformance #performancePanel h3{font-size:21px;margin-bottom:6px}.performanceControls{margin-top:6px}}
 @media(max-height:520px){.showPerformance #performanceStats{font-size:20px;line-height:1.25}.showPerformance #performancePanel h3{font-size:20px}.performanceControls summary{font-size:15px;padding:2px 0}}
+
+.performancePanelHeading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.showPerformance #performancePanel .performancePanelHeading h3{margin:0}
+.showPerformance #performancePanel #hidePerformance{flex:0 0 30px;width:30px;height:30px;padding:0;margin:0;border:0;background:none;font:26px/1 sans-serif;color:#ecd9a5}
+.topActions #togglePerformance{color:#e4d3a3;border:1px solid #7b8059;border-radius:4px;padding:6px 8px;white-space:nowrap}

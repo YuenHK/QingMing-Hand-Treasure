@@ -168,7 +168,7 @@ function drawHint(now){
  ctx.restore();
 }
 function uiDwell(dt){
- const headerIds=['getHint','fullscreen','aboutPainting','reset'];
+ const headerIds=['getHint','fullscreen','aboutPainting','togglePerformance','reset'];
  const ids=!$('welcome').hidden?['welcomeCamera']:journey.mode==='discovery'||journey.mode==='complete'?['continue','replayNarration',...headerIds]:[...headerIds,'back','skipReplay'];
  for(const id of ids)$(id).style.background='';
  uiHover='';uiTime=0;

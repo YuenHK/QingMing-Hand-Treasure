@@ -7,6 +7,7 @@ $('playerModeHint').textContent=config.numHands===1?'單人模式：舉起一隻
 $('handCapacityCopy').textContent=config.numHands===1?'單人省電：每隻手 21 個關鍵點。':'每隻手 21 個關鍵點，最多兩手合作尋寶。';
 const video=$('cameraVideo'),overlay=$('handOverlay'),ink=overlay.getContext('2d');
 const reality=$('liveCameraCanvas'),liveInk=reality.getContext('2d'),positionCanvas=$('palmMap'),mapInk=positionCanvas.getContext('2d');
+let showDiagnostics=settings.diagnostics;
 let lastPreview=0,previewFrames=0,trail=[],captureStart=0,lastReport=0,reportFrames=0,reportGameFrames=0;
 const handTracker=createHandTracker();let trackedHands=[];
 new ResizeObserver(()=>{const r=positionCanvas.getBoundingClientRect();if(!r.width||!r.height)return;const scale=Math.min(1.5,480/r.width,320/r.height),w=Math.round(r.width*scale),h=Math.round(r.height*scale);if(positionCanvas.width!==w||positionCanvas.height!==h){positionCanvas.width=w;positionCanvas.height=h;trail=[];}}).observe(positionCanvas);
@@ -159,15 +160,25 @@ function reportPerformance(now){
  reportFrames=diagnostics.frames;reportGameFrames=gameFrames;lastReport=now;
  diagnostics.inFlight=busy?1:0;diagnostics.pendingMs=busy?Math.round(now-captureStart):0;
  $('cameraPanel').dataset.diagnostics=JSON.stringify(diagnostics);
- if(settings.diagnostics)$('performanceStats').textContent=`${config.name} · ${diagnostics.delegate} · ${config.numHands} 手\nAI：${diagnostics.ms} ms\n平均：${diagnostics.averageMs} ms\n取像：${diagnostics.captureMs} ms\n總往返：${diagnostics.roundTripMs} ms\n目前等待：${diagnostics.pendingMs} ms\n辨識：${diagnostics.trackingFps} 次／秒\n畫面：${diagnostics.renderFps} fps\n鏡頭：${diagnostics.cameraWidth||0}×${diagnostics.cameraHeight||0} @ ${Math.round(diagnostics.cameraFps||0)}\n輸入：${capture.size.join('×')} · ${diagnostics.inFlight} 張`;
+ if(showDiagnostics)updatePerformanceText();
 }
-if(settings.diagnostics){
- $('performancePanel').hidden=false;$('aiDock').classList.add('showPerformance');$('welcome').style.right='var(--side)';$('performanceMode').value=settings.profile;$('performanceEngine').value=settings.engine;
- $('applyPerformance').onclick=()=>{
-  const profile=$('performanceMode').value,engine=$('performanceEngine').value;try{preferenceStorage?.setItem('qingming.performance.v2',JSON.stringify({profile,engine}));}catch{}
-  const url=new URL(window.location.href);url.searchParams.set('performance',profile);url.searchParams.set('engine',engine);window.location.href=url.href;
- };
+function updatePerformanceText(){
+ $('performanceStats').textContent=`${config.name} · ${diagnostics.delegate} · ${config.numHands} 手\nAI：${diagnostics.ms} ms\n平均：${diagnostics.averageMs} ms\n取像：${diagnostics.captureMs} ms\n總往返：${diagnostics.roundTripMs} ms\n目前等待：${diagnostics.pendingMs} ms\n辨識：${diagnostics.trackingFps} 次／秒\n畫面：${diagnostics.renderFps} fps\n鏡頭：${diagnostics.cameraWidth||0}×${diagnostics.cameraHeight||0} @ ${Math.round(diagnostics.cameraFps||0)}\n輸入：${capture.size.join('×')} · ${diagnostics.inFlight} 張`;
 }
+function setDiagnostics(visible){
+ showDiagnostics=visible;$('performancePanel').hidden=!visible;
+ $('aiDock').classList[visible?'add':'remove']('showPerformance');$('welcome').style.right=visible?'var(--side)':'';
+ $('togglePerformance').textContent=visible?'收起數據':'效能數據';$('togglePerformance').setAttribute('aria-pressed',String(visible));
+ if(visible)updatePerformanceText();
+}
+$('performanceMode').value=settings.profile;$('performanceEngine').value=settings.engine;
+$('togglePerformance').onclick=()=>setDiagnostics(!showDiagnostics);
+$('hidePerformance').onclick=()=>setDiagnostics(false);
+$('applyPerformance').onclick=()=>{
+ const profile=$('performanceMode').value,engine=$('performanceEngine').value;try{preferenceStorage?.setItem('qingming.performance.v2',JSON.stringify({profile,engine}));}catch{}
+ const url=new URL(window.location.href);url.searchParams.set('performance',profile);url.searchParams.set('engine',engine);url.searchParams.set('diagnostics','1');window.location.href=url.href;
+};
+setDiagnostics(showDiagnostics);
 $('cameraStart').onclick=()=>start();
 $('cameraStop').onclick=()=>{stop();status('已關閉鏡頭 · 可用滑鼠試玩','idle');};
 $('mouseMode').onclick=()=>{$('welcome').hidden=true;$('cameraPanel').hidden=true;status('滑鼠同手勢都可操作，移動滑鼠即可接手',mode==='hand'?'tracking':'idle');};

@@ -22,6 +22,7 @@ test('single and cooperative controls, clue guidance, complete journey and hand 
    else if(this.id==='fullscreen')r={left:950,top:30,width:90,height:40};
    else if(this.id==='aboutPainting')r={left:850,top:30,width:90,height:40};
    else if(this.id==='reset')r={left:1170,top:30,width:100,height:40};
+   else if(this.id==='togglePerformance')r={left:740,top:30,width:100,height:40};
    else if(!['mainView','paintingWrap'].includes(this.id))r={left:0,top:0,width:0,height:0};
    if(this.hidden)r.width=r.height=0;
    return {...r,right:r.left+r.width,bottom:r.top+r.height};
@@ -53,6 +54,12 @@ test('single and cooperative controls, clue guidance, complete journey and hand 
  assert.equal(get('handCursor').hidden,false);assert.equal(get('handOverlay').dataset.landmarks,21);
  const state=()=>window.portalGame.getState();
  const beforeHighRefresh=state().frames;advance(1,undefined,1000/120);assert.ok(state().frames-beforeHighRefresh<=31,'a 120Hz screen must not redraw the game 120 times per second');
+ assert.equal(get('performancePanel').hidden,true,'the public game starts with its AI teaching view');
+ const beforeStats={chapter:state().chapter,total:state().total};
+ advance(1.5,()=>window.portalHands([{id:1,x:780/1280,y:50/720,active:true}]));
+ assert.equal(get('performancePanel').hidden,false,'the ordinary public game can open stats with either hand');assert.equal(get('togglePerformance').getAttribute('aria-pressed'),'true');
+ assert.equal(state().chapter,beforeStats.chapter);assert.equal(state().total,beforeStats.total);assert.equal(stopped,false,'opening data must retain the live camera');
+ get('hidePerformance').click();assert.equal(get('performancePanel').hidden,true);assert.equal(get('togglePerformance').textContent,'效能數據');assert.equal(get('welcome').hidden,true,'data toggle must not restart the game');
  advance(1.5,()=>window.portalHands([{id:1,x:990/1280,y:50/720,active:true}]));assert.equal(get('fullscreenHint').hidden,false,'hand dwell on fullscreen explains the browser activation requirement');
  advance(1.5,()=>window.portalHands([{id:1,x:890/1280,y:50/720,active:true}]));assert.equal(get('welcome').hidden,false,'either player can open the painting introduction');
  get('welcomeCamera').click();advance(.1);
@@ -64,6 +71,7 @@ test('single and cooperative controls, clue guidance, complete journey and hand 
  assert.ok(edgeX<90&&edgeX>12);
  advance(2.1,()=>window.portalHands([{id:0,x:edgeX/1280,y:(edgeRect.top+source.y*edgeRect.height)/720,active:true}]));
  assert.equal(state().mode,'discovery','a visible edge target must be selectable');source.x=originalX;
+ get('togglePerformance').click();assert.equal(state().total,1,'showing data must retain an already found treasure');assert.equal(state().mode,'discovery');get('hidePerformance').click();assert.equal(state().total,1);
  advance(1.5,()=>window.portalHands([{id:1,x:1220/1280,y:50/720,active:true}]));assert.equal(get('welcome').hidden,false,'header gestures remain available while a discovery card is open');get('welcomeCamera').click();advance(.1);
  advance(.2,[hand(.2,.3),hand(.8,.3)]);
  assert.equal(state().players.length,2,'camera delivers two independently active controls');
