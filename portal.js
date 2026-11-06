@@ -5,9 +5,11 @@ import {createReveal,createTourGlow,createLensSparkles,REVEAL_SECONDS} from './r
 import {createGameAudio} from './game-audio.mjs';
 import {createInputRouter} from './input-router.mjs';
 import {createRoundPicker} from './round-selection.mjs';
+import {installFullscreen} from './fullscreen.mjs';
 const audio=createGameAudio();
 const inputRouter=createInputRouter();
 const W=1280,H=720,VIEW=1646,SCROLL_W=30000,$=id=>document.getElementById(id),chapterPool=window.PORTAL_CHAPTERS;
+installFullscreen(document,$('fullscreen'));
 let roundStorage;try{roundStorage=window.localStorage;}catch{}
 const nextRound=createRoundPicker(chapterPool,{storage:roundStorage});
 let chapters=chapterPool;
@@ -162,7 +164,8 @@ function drawHint(now){
  ctx.restore();
 }
 function uiDwell(dt){
- const ids=!$('welcome').hidden?['welcomeCamera']:journey.mode==='discovery'||journey.mode==='complete'?['continue','replayNarration']:['reset','getHint','aboutPainting','back','skipReplay'];
+ const headerIds=['getHint','fullscreen','aboutPainting','reset'];
+ const ids=!$('welcome').hidden?['welcomeCamera']:journey.mode==='discovery'||journey.mode==='complete'?['continue','replayNarration',...headerIds]:[...headerIds,'back','skipReplay'];
  for(const id of ids)$(id).style.background='';
  uiHover='';uiTime=0;
  for(const control of controllers()){
@@ -196,7 +199,7 @@ function drawWelcome(now){if(document.hidden||now-lastIntro<50)return;lastIntro=
 document.addEventListener('visibilitychange',()=>{last=performance.now();});
 function draw(now){
  const rawDt=Math.max(0,(now-last)/1000),dt=Math.min(.06,rawDt),animationDt=Math.min(.25,rawDt);last=now;if(pointer.source==='hand'&&now-lastInput>450)pointer.active=false;for(const h of hands)if(now-(h.lastInput??0)>450)h.active=false;
- const activeIds=new Set(controllers().map(h=>h.id));for(const [id,s]of controlStates)if(!activeIds.has(id)){s.hover=-1;s.dwell=0;s.uiHover='';s.uiTime=0;}
+ const activeIds=new Set(controllers().map(h=>h.id));for(const [id,s]of controlStates)if(!activeIds.has(id)){s.hover=-1;s.dwell=0;s.uiHover='';s.uiTime=0;s.uiLatched='';}
  $('getHint').disabled=journey.mode!=='search'||!$('welcome').hidden||!$('cameraPanel').hidden||!artReady;
  if(hint&&journey.mode==='search'){const t=Math.min(1,(now-hint.start)/750),e=t*t*(3-2*t);artPan=hint.fromPan+(hint.toPan-hint.fromPan)*e;positionPainting();}
  else if(artOverflow&&journey.mode==='search'&&hover<0&&$('welcome').hidden&&$('cameraPanel').hidden){

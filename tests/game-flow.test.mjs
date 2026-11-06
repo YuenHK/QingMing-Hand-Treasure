@@ -19,6 +19,9 @@ test('single and cooperative controls, clue guidance, complete journey and hand 
    else if(this.id==='welcomeCamera')r={left:320,top:590,width:640,height:60};
    else if(this.id==='continue')r={left:340,top:610,width:600,height:60};
    else if(this.id==='getHint')r={left:1050,top:30,width:100,height:40};
+   else if(this.id==='fullscreen')r={left:950,top:30,width:90,height:40};
+   else if(this.id==='aboutPainting')r={left:850,top:30,width:90,height:40};
+   else if(this.id==='reset')r={left:1170,top:30,width:100,height:40};
    else if(!['mainView','paintingWrap'].includes(this.id))r={left:0,top:0,width:0,height:0};
    if(this.hidden)r.width=r.height=0;
    return {...r,right:r.left+r.width,bottom:r.top+r.height};
@@ -27,7 +30,7 @@ test('single and cooperative controls, clue guidance, complete journey and hand 
  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
  for(const tag of html.matchAll(/<[^>]+\bid="([^"]+)"[^>]*>/g)){const e=new Element(tag[1]);e.hidden=/\bhidden(?:\s|>)/.test(tag[0]);elements.set(e.id,e);}
  const get=id=>{assert.ok(elements.has(id),`DOM is missing #${id}`);return elements.get(id);};
- globalThis.document={getElementById:get,createElement:()=>new Element(),hidden:false,addEventListener(){}};
+ globalThis.document={getElementById:get,createElement:()=>new Element(),hidden:false,documentElement:{requestFullscreen:()=>Promise.resolve()},fullscreenEnabled:true,addEventListener(){}};
  globalThis.window={isSecureContext:true,addEventListener(){}};
  globalThis.performance={now:()=>clock};
  globalThis.requestAnimationFrame=fn=>{frames.set(++id,fn);return id;};globalThis.cancelAnimationFrame=n=>frames.delete(n);
@@ -47,13 +50,18 @@ test('single and cooperative controls, clue guidance, complete journey and hand 
  assert.equal(get('welcome').hidden,true,'hand dwell must start on the intro itself');
  assert.equal(get('handCursor').hidden,false);assert.equal(get('handOverlay').dataset.landmarks,21);
  const state=()=>window.portalGame.getState();
+ advance(1.5,()=>window.portalHands([{id:1,x:990/1280,y:50/720,active:true}]));assert.equal(get('fullscreenHint').hidden,false,'hand dwell on fullscreen explains the browser activation requirement');
+ advance(1.5,()=>window.portalHands([{id:1,x:890/1280,y:50/720,active:true}]));assert.equal(get('welcome').hidden,false,'either player can open the painting introduction');
+ get('welcomeCamera').click();advance(.1);
+ advance(1.5,()=>window.portalHands([{id:1,x:1220/1280,y:50/720,active:true}]));assert.equal(get('welcome').hidden,false,'either player can restart using the header');assert.equal(state().total,0);
+ get('welcomeCamera').click();advance(.1);
  // Reproduce a visible target inside the former excluded 90px edge band.
  const edge=state().targets[0],source=window.PORTAL_CHAPTERS[0].targets.find(t=>t.id===edge.id),originalX=source.x;source.x=.04;
  const edgeRect=get('stage').getBoundingClientRect(),edgeX=edgeRect.left+source.x*edgeRect.width;
  assert.ok(edgeX<90&&edgeX>12);
  advance(2.1,()=>window.portalHands([{id:0,x:edgeX/1280,y:(edgeRect.top+source.y*edgeRect.height)/720,active:true}]));
  assert.equal(state().mode,'discovery','a visible edge target must be selectable');source.x=originalX;
- get('reset').click();get('welcomeCamera').click();advance(.1);
+ advance(1.5,()=>window.portalHands([{id:1,x:1220/1280,y:50/720,active:true}]));assert.equal(get('welcome').hidden,false,'header gestures remain available while a discovery card is open');get('welcomeCamera').click();advance(.1);
  advance(.2,[hand(.2,.3),hand(.8,.3)]);
  assert.equal(state().players.length,2,'camera delivers two independently active controls');
  assert.equal(get('handOverlay').dataset.landmarks,42);assert.equal(get('handCursor2').hidden,false);

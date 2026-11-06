@@ -46,7 +46,7 @@ def open_game(url):
     for base, suffix in [('PROGRAMFILES(X86)','Microsoft/Edge/Application/msedge.exe'),('PROGRAMFILES','Microsoft/Edge/Application/msedge.exe'),('PROGRAMFILES','Google/Chrome/Application/chrome.exe'),('LOCALAPPDATA','Google/Chrome/Application/chrome.exe')]:
         exe=Path(os.environ.get(base,''))/suffix
         if exe.is_file():
-            subprocess.Popen([str(exe),'--new-window',url])
+            subprocess.Popen([str(exe),'--new-window','--start-fullscreen',url])
             return
     webbrowser.open(url)
 

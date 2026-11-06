@@ -137,3 +137,5 @@ header{gap:14px;align-items:center}
 .topActions #getHint{border:1px solid #a58b50;color:#ffe5a0;font-size:14px;padding:7px 10px;background:#182219b8}
 .topActions #getHint:disabled{opacity:.35}
 @media(max-width:1000px){.topActions{gap:5px}.topActions #getHint{font-size:12px;padding:6px}.topActions #aboutPainting{display:none}}
+
+#fullscreenHint{position:absolute;z-index:61;right:26px;top:calc(var(--artTop,0px) + 82px);max-width:calc(100% - 52px);font:16px/1.5 serif;color:#ffe5a0;background:#152219ed;border:1px solid #a58b50;border-radius:5px;padding:9px 14px;margin:0;pointer-events:none}
