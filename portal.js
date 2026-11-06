@@ -6,7 +6,7 @@ import {createGameAudio} from './game-audio.mjs';
 import {createInputRouter} from './input-router.mjs';
 import {createRoundPicker} from './round-selection.mjs';
 import {installFullscreen} from './fullscreen.mjs';
-import {createFrameClock,readPerformanceSettings,trackingProfile} from './performance.mjs?v=20261106-auto1';
+import {createFrameClock,readPerformanceSettings,trackingProfile} from './performance.mjs?v=20261106-auto2';
 let framePreferences;try{framePreferences=window.localStorage;}catch{}
 const frameSettings=readPerformanceSettings({search:window.location?.search||'',storage:framePreferences}),frameClock=createFrameClock(trackingProfile(frameSettings.profile).renderFps,performance.now());
 const audio=createGameAudio();

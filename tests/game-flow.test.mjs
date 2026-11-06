@@ -32,7 +32,8 @@ test('single and cooperative controls, clue guidance, complete journey and hand 
  for(const tag of html.matchAll(/<[^>]+\bid="([^"]+)"[^>]*>/g)){const e=new Element(tag[1]);e.hidden=/\bhidden(?:\s|>)/.test(tag[0]);elements.set(e.id,e);}
  const get=id=>{assert.ok(elements.has(id),`DOM is missing #${id}`);return elements.get(id);};
  globalThis.document={getElementById:get,createElement:()=>new Element(),hidden:false,documentElement:{requestFullscreen:()=>Promise.resolve()},fullscreenEnabled:true,addEventListener(){}};
- globalThis.window={isSecureContext:true,location:{search:process.env.QINGMING_TEST_PROFILE?'?performance='+process.env.QINGMING_TEST_PROFILE:''},addEventListener(){}};
+ const legacySettings=process.env.QINGMING_TEST_LEGACY_SETTINGS?{getItem:key=>key==='qingming.performance.v2'?JSON.stringify({profile:'balanced',engine:'cpu',model:'full'}):null,setItem(){}}:undefined;
+ globalThis.window={localStorage:legacySettings,isSecureContext:true,location:{search:process.env.QINGMING_TEST_PROFILE?'?performance='+process.env.QINGMING_TEST_PROFILE:''},addEventListener(){}};
  globalThis.performance={now:()=>clock};
  globalThis.requestAnimationFrame=fn=>{frames.set(++id,fn);return id;};globalThis.cancelAnimationFrame=n=>frames.delete(n);
  globalThis.ResizeObserver=class{constructor(fn){this.fn=fn;}observe(){this.fn();}};
@@ -42,9 +43,10 @@ test('single and cooperative controls, clue guidance, complete journey and hand 
  const cameraRequests=[];
  Object.defineProperty(globalThis,'navigator',{configurable:true,value:{userAgent:process.env.QINGMING_TEST_ANDROID?'Android Test Browser':'Desktop Test Browser',mediaDevices:{getUserMedia:async options=>{cameraRequests.push(options);if(process.env.QINGMING_TEST_CAMERA_FALLBACK&&cameraRequests.length===1){const error=Error('Camera only supports a larger resolution');error.name='OverconstrainedError';throw error;}return {getTracks:()=>[track],getVideoTracks:()=>[track]};},enumerateDevices:async()=>[]}}});
  let ai;
- globalThis.Worker=class{constructor(){ai=this;}postMessage(message){if(message.type==='init'){assert.equal(message.model,process.env.QINGMING_TEST_ANDROID?'lite':'full');assert.equal(message.numHands,process.env.QINGMING_TEST_PROFILE==='single'?1:2);queueMicrotask(()=>this.onmessage({data:{type:'ready'}}));}}terminate(){}send(points){this.onmessage({data:{type:'result',hands:Array.isArray(points?.[0])?points:points?[points]:[],ms:4}});}};
+ globalThis.Worker=class{constructor(){ai=this;}postMessage(message){if(message.type==='init'){assert.equal(message.automatic,true);assert.equal(message.gpu,true);assert.equal(message.model,process.env.QINGMING_TEST_ANDROID?'lite':'full');assert.equal(message.numHands,process.env.QINGMING_TEST_PROFILE==='single'?1:2);queueMicrotask(()=>this.onmessage({data:{type:'ready'}}));}}terminate(){}send(points){this.onmessage({data:{type:'result',hands:Array.isArray(points?.[0])?points:points?[points]:[],ms:4}});}};
  await import('../chapters.js');await import('../portal.js');await import('../camera.mjs');
  for(let i=0;i<15;i++)await Promise.resolve();
+ assert.equal(get('performanceModel').value,'auto');assert.equal(get('performanceEngine').value,'auto');
  assert.equal(get('welcome').hidden,false);assert.equal(get('liveTag').textContent,'LIVE',get('cameraStatus').textContent);assert.equal(get('welcomeCamera').disabled,false);
  if(process.env.QINGMING_TEST_CAMERA_FALLBACK){assert.equal(cameraRequests.length,2);assert.ok(cameraRequests[0].video.width.max);assert.equal(cameraRequests[1].video.width.max,undefined,'an unsupported strict camera size retries with ideal constraints');}
  function hand(x,y){const rawX=1-(.15+x*.7),rawY=.15+y*.7-.02;const points=Array.from({length:21},()=>({x:rawX,y:rawY}));points[0].y+=.1;for(const [tip,pip]of [[8,6],[12,10],[16,14],[20,18]]){points[pip].y-=.05;points[tip].y-=.2;}return points;}

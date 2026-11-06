@@ -66,7 +66,16 @@ test('Android auto uses Lite, while explicit model and CPU choices stay independ
  assert.equal(trackingModel('auto',true).id,'lite');assert.equal(trackingModel('auto',false).id,'full');
  assert.equal(trackingModel('full',true).file,'hand_landmarker.task');assert.equal(trackingModel('lite',false).file,'hand_landmarker_lite.task');
  const storage={getItem:()=>JSON.stringify({model:'full',engine:'cpu'})};
- assert.equal(readPerformanceSettings({storage}).model,'full');
+ assert.equal(readPerformanceSettings({storage}).model,'auto');
  assert.deepEqual(readPerformanceSettings({search:'?model=lite&engine=auto',storage}),{profile:'balanced',engine:'auto',model:'lite',diagnostics:false});
  assert.equal(readPerformanceSettings({search:'?model=../../other.task'}).model,'auto');
+});
+
+test('ordinary launches always use automatic model and engine despite legacy manual preferences',()=>{
+ for(const model of ['lite','full']){
+  const storage={getItem:()=>JSON.stringify({profile:'smooth',engine:'cpu',model})};
+  assert.deepEqual(readPerformanceSettings({storage}),{profile:'smooth',engine:'auto',model:'auto',diagnostics:false});
+  // Staff can still request a deliberate comparison for the current URL.
+  assert.deepEqual(readPerformanceSettings({search:'?model=full&engine=cpu',storage}),{profile:'smooth',engine:'cpu',model:'full',diagnostics:false});
+ }
 });

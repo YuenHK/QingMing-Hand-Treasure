@@ -12,7 +12,9 @@ export function trackingModel(model='auto',android=false){
 }
 export function readPerformanceSettings({search='',storage}={}){
  let saved={};try{saved=JSON.parse(storage?.getItem('qingming.performance.v2')||'{}')||{};}catch{}
- const query=new URLSearchParams(search),profile=query.get('performance')||saved.profile,engine=query.get('engine')||saved.engine,model=query.get('model')||saved.model;
+ // Old manual model/engine preferences must not lock ordinary launches.
+ // Explicit diagnostic URL choices apply only to that URL.
+ const query=new URLSearchParams(search),profile=query.get('performance')||saved.profile,engine=query.get('engine'),model=query.get('model');
  return {profile:['smooth','single'].includes(profile)?profile:'balanced',engine:engine==='cpu'?'cpu':'auto',model:['lite','full'].includes(model)?model:'auto',diagnostics:query.get('diagnostics')==='1'};
 }
 export function createFrameCapture(makeCanvas=()=>document.createElement('canvas'),makeBitmap=source=>createImageBitmap(source)){

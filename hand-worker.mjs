@@ -1,6 +1,6 @@
 import {FilesetResolver, HandLandmarker} from './vendor/mediapipe/vision_bundle.mjs';
-import {createTrackingEngine,trackingModel} from './performance.mjs?v=20261106-auto1';
-import {createAdaptiveTracker} from './adaptive-model.mjs?v=20261106-auto1';
+import {createTrackingEngine,trackingModel} from './performance.mjs?v=20261106-auto2';
+import {createAdaptiveTracker} from './adaptive-model.mjs?v=20261106-auto2';
 let tracker,initializing;
 async function initialize(options) {
  const files=await FilesetResolver.forVisionTasks(new URL('./vendor/mediapipe/wasm',import.meta.url).href,true);
