@@ -129,3 +129,11 @@ header{gap:14px;align-items:center}
 .welcomeStart .welcomeGestureHint{font-size:18px;line-height:1.5;margin:0;color:#ebd79f}
 .welcomeStart .welcomeActions{margin:2px 0 0}
 .welcomeStart .welcomeActions #welcomeCamera{font-size:24px;line-height:1.3;padding:14px 20px;flex-basis:560px}
+
+/* Independent cooperative cursors; a compact, readable clue action. */
+.playerCursor{position:absolute;left:0;top:0;z-index:60;width:20px;height:20px;border:2px solid var(--player-color,#f2d697);border-radius:50%;background:#14231b55;pointer-events:none;box-shadow:0 0 12px var(--player-color,#f2d697);will-change:transform}
+.playerCursor::after{content:"P" attr(data-player);position:absolute;left:17px;top:-12px;font:bold 12px sans-serif;white-space:nowrap;color:var(--player-color,#f2d697);text-shadow:0 1px 3px #000}
+#handCursor{border-color:var(--player-color,#f2d697)}
+.topActions #getHint{border:1px solid #a58b50;color:#ffe5a0;font-size:14px;padding:7px 10px;background:#182219b8}
+.topActions #getHint:disabled{opacity:.35}
+@media(max-width:1000px){.topActions{gap:5px}.topActions #getHint{font-size:12px;padding:6px}.topActions #aboutPainting{display:none}}

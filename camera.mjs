@@ -1,11 +1,12 @@
-import {palmControl,smoothPoint} from './hand-math.mjs';
+import {createHandTracker} from './hand-math.mjs';
 const $=id=>document.getElementById(id);
 const video=$('cameraVideo'),overlay=$('handOverlay'),ink=overlay.getContext('2d');
 const reality=$('liveCameraCanvas'),liveInk=reality.getContext('2d'),positionCanvas=$('palmMap'),mapInk=positionCanvas.getContext('2d');
 let lastPreview=0,previewFrames=0,trail=[];
+const handTracker=createHandTracker();let trackedHands=[];
 new ResizeObserver(()=>{const r=positionCanvas.getBoundingClientRect();if(!r.width||!r.height)return;const w=Math.round(r.width*2),h=Math.round(r.height*2);if(positionCanvas.width!==w||positionCanvas.height!==h){positionCanvas.width=w;positionCanvas.height=h;trail=[];}}).observe(positionCanvas);
 const connections=[[0,1,2,3,4],[0,5,6,7,8],[5,9,10,11,12],[9,13,14,15,16],[13,17,18,19,20],[0,17]];
-let stream,worker,busy=false,frameId=0,lastFrame=0,lastVideoTime=-1,position=null,lastResult=0,generation=0;
+let stream,worker,busy=false,frameId=0,lastFrame=0,lastVideoTime=-1,position=null,generation=0;
 let mode='mouse',ready=false,mirror=true,reach=.15,starting=false,cancelModel=null,lastMotion=0;
 const diagnostics={state:'idle',frames:0,hands:0,ms:0,error:null};
 function status(text,state) {
@@ -15,11 +16,11 @@ function status(text,state) {
   $('welcomeHandStatus').textContent=text;
   $('cameraPanel').dataset.diagnostics=JSON.stringify(diagnostics);
 }
-function deactivate(){window.portalInput(.5,.5,false,'hand');position=null;}
+function deactivate(){window.portalHands([]);position=null;}
 function telemetry(point,active=false){
   const mouseOwns=$('mainView').dataset.inputSource==='mouse';
-  $('aiLive').dataset.active=String(active);$('aiGesture').textContent=point?(point.open?'張開手掌':'合起手掌'):'等待手掌';
-  $('landmarkCount').textContent=point?'已找到 21 個關鍵點':'未偵測到手掌';
+  $('aiLive').dataset.active=String(active);$('aiGesture').textContent=trackedHands.length===2?'兩手合作':point?(point.open?'張開手掌':'合起手掌'):'等待手掌';
+  $('landmarkCount').textContent=trackedHands.length?`${trackedHands.length} 隻手 · ${trackedHands.length*21} 個關鍵點`:'未偵測到手掌';
   $('controlCommand').textContent=mouseOwns?'滑鼠控制光圈':active?'光圈移動中':'光圈暫停';
   if(point){for(const [key,value]of [['X',point.x],['Y',point.y]]){$('position'+key).value=value;$('position'+key+'Text').textContent=Math.round(value*100)+'%';}}
   else{$('positionXText').textContent='—';$('positionYText').textContent='—';$('positionX').value=0;$('positionY').value=0;}
@@ -28,19 +29,17 @@ function telemetry(point,active=false){
   drawPosition(point,active);
 }
 function drawPosition(point,active){
-  const w=positionCanvas.width,h=positionCanvas.height;mapInk.fillStyle='#101e18';mapInk.fillRect(0,0,w,h);mapInk.strokeStyle='#53674744';mapInk.lineWidth=.65;
-  for(let i=1;i<4;i++){mapInk.beginPath();mapInk.moveTo(i*w/4,0);mapInk.lineTo(i*w/4,h);mapInk.moveTo(0,i*h/4);mapInk.lineTo(w,i*h/4);mapInk.stroke();}
-  mapInk.fillStyle='#859c75';mapInk.font='17px sans-serif';mapInk.fillText('左',8,24);mapInk.fillText('右',w-26,24);
-  if(!point){trail=[];return;}
-  if(active){trail.push({x:point.x,y:point.y});if(trail.length>28)trail.shift();}
-  if(trail.length>1){
-    const first=trail[0],last=trail.at(-1),fade=mapInk.createLinearGradient(first.x*w,first.y*h,last.x*w,last.y*h);
-    fade.addColorStop(0,'#a3c5820a');fade.addColorStop(1,'#d8dda884');
-    mapInk.strokeStyle=fade;mapInk.lineWidth=1.15;mapInk.lineCap='round';mapInk.lineJoin='round';mapInk.beginPath();mapInk.moveTo(first.x*w,first.y*h);
-    for(let i=1;i<trail.length-1;i++){const a=trail[i],b=trail[i+1];mapInk.quadraticCurveTo(a.x*w,a.y*h,(a.x+b.x)*w/2,(a.y+b.y)*h/2);}
-    mapInk.lineTo(last.x*w,last.y*h);mapInk.stroke();
-  }
-  const x=point.x*w,y=point.y*h;mapInk.strokeStyle=active?'#eddf9b':'#9d9e78';mapInk.lineWidth=1.1;mapInk.beginPath();mapInk.arc(x,y,11,0,Math.PI*2);mapInk.stroke();mapInk.fillStyle=mapInk.strokeStyle;mapInk.beginPath();mapInk.arc(x,y,3.5,0,Math.PI*2);mapInk.fill();
+ const w=positionCanvas.width,h=positionCanvas.height;mapInk.fillStyle='#101e18';mapInk.fillRect(0,0,w,h);mapInk.strokeStyle='#53674744';mapInk.lineWidth=.65;
+ for(let i=1;i<4;i++){mapInk.beginPath();mapInk.moveTo(i*w/4,0);mapInk.lineTo(i*w/4,h);mapInk.moveTo(0,i*h/4);mapInk.lineTo(w,i*h/4);mapInk.stroke();}
+ mapInk.fillStyle='#859c75';mapInk.font='17px sans-serif';mapInk.fillText('左',8,24);mapInk.fillText('右',w-26,24);
+ for(let id=0;id<2;id++){
+  const control=trackedHands.find(p=>p.id===id),path=trail[id]??=[];
+  if(!control){trail[id]=[];continue;}
+  if(active&&control.open){path.push({x:control.x,y:control.y});if(path.length>28)path.shift();}
+  const color=id?'#78f0ce':'#eddf9b';mapInk.strokeStyle=color+'99';mapInk.lineWidth=1.1;mapInk.lineCap='round';mapInk.lineJoin='round';
+  if(path.length>1){mapInk.beginPath();mapInk.moveTo(path[0].x*w,path[0].y*h);for(let i=1;i<path.length-1;i++){const a=path[i],b=path[i+1];mapInk.quadraticCurveTo(a.x*w,a.y*h,(a.x+b.x)*w/2,(a.y+b.y)*h/2);}mapInk.lineTo(path.at(-1).x*w,path.at(-1).y*h);mapInk.stroke();}
+  const x=control.x*w,y=control.y*h;mapInk.strokeStyle=color;mapInk.beginPath();mapInk.arc(x,y,11,0,Math.PI*2);mapInk.stroke();mapInk.fillStyle=color;mapInk.beginPath();mapInk.arc(x,y,3.5,0,Math.PI*2);mapInk.fill();mapInk.fillText('P'+(id+1),x+15,y-7);
+ }
 }
 function drawReality(now){
   if(now-lastPreview<33||video.readyState<2||document.hidden)return;lastPreview=now;
@@ -53,31 +52,33 @@ function direction(next,previous){
   if(Math.hypot(dx,dy)>.008){const i=(Math.round(Math.atan2(dy,dx)/(Math.PI/4))+8)%8;$('directionArrow').textContent=['→','↘','↓','↙','←','↖','↑','↗'][i];$('directionText').textContent=['向右','向右下','向下','向左下','向左','向左上','向上','向右上'][i];lastMotion=performance.now();}
   else if(performance.now()-lastMotion>450){$('directionArrow').textContent='◎';$('directionText').textContent='停留選取';}
 }
-function drawHand(points) {
+function drawHand(hands=[]) {
   ink.clearRect(0,0,overlay.width,overlay.height);
-  overlay.dataset.landmarks=points?.length||0;
-  if(!points)return;
+  overlay.dataset.landmarks=hands?.length*21||0;
+  if(!hands?.length)return;
+  for(const hand of hands){const points=hand.points;
   const scale=Math.min(overlay.width/(video.videoWidth||640),overlay.height/(video.videoHeight||480)),dw=(video.videoWidth||640)*scale,dh=(video.videoHeight||480)*scale;
   const xy=p=>[(overlay.width-dw)/2+(mirror?1-p.x:p.x)*dw,(overlay.height-dh)/2+p.y*dh];
   ink.save();ink.shadowColor='#07110ed0';ink.shadowBlur=3;ink.strokeStyle='#00e676';ink.lineWidth=2.7;ink.lineCap='round';ink.lineJoin='round';
   for(const chain of connections){ink.beginPath();chain.forEach((i,j)=>ink[j?'lineTo':'moveTo'](...xy(points[i])));ink.stroke();}
   ink.fillStyle='#39ff6a';for(const p of points){ink.beginPath();ink.arc(...xy(p),3.6,0,Math.PI*2);ink.fill();}
   const palm=[0,5,9,13,17].reduce((p,i)=>({x:p.x+points[i].x/5,y:p.y+points[i].y/5}),{x:0,y:0});
-  ink.strokeStyle='#6cff99';ink.lineWidth=2.5;ink.beginPath();ink.arc(...xy(palm),14,0,Math.PI*2);ink.stroke();ink.restore();
+  ink.strokeStyle='#6cff99';ink.lineWidth=2.5;ink.beginPath();ink.arc(...xy(palm),14,0,Math.PI*2);ink.stroke();ink.shadowBlur=0;ink.fillStyle='#e9ffe9';ink.font='bold 17px sans-serif';ink.fillText('P'+(hand.id+1),...xy({...palm,y:palm.y-.06}));ink.restore();
+  }
 }
 function result(data) {
-  busy=false;diagnostics.frames++;diagnostics.ms=Math.round(data.ms);diagnostics.hands=data.landmarks?1:0;
-  const now=performance.now(),point=palmControl(data.landmarks,mirror,reach);
-  drawHand(data.landmarks);
+  busy=false;diagnostics.frames++;diagnostics.ms=Math.round(data.ms);
+  const now=performance.now();trackedHands=handTracker.update(data.hands??(data.landmarks?[data.landmarks]:[]),now,mirror,reach);diagnostics.hands=trackedHands.length;
+  drawHand(trackedHands);
   if(mode!=='hand')return;
-  if(!point){deactivate();telemetry(null);status('舉起手掌，放入鏡頭畫面','searching');return;}
-  if(!point.open){deactivate();telemetry(point);status('手掌合起：暫停 · 張開繼續','paused');return;}
-  const previous=position;position=smoothPoint(position,point,lastResult?(now-lastResult)/1000:.1);lastResult=now;
-  const canControl=$('cameraPanel').hidden;
-  const accepted=window.portalInput(position.x,position.y,canControl,'hand');
-  telemetry({...point,...position},canControl&&accepted);if(canControl&&accepted)direction(position,previous);
+  const canControl=$('cameraPanel').hidden,accepted=window.portalHands(trackedHands.map(h=>({id:h.id,x:h.x,y:h.y,active:canControl&&h.open})));
+  const point=trackedHands.find(h=>h.open)||trackedHands[0];
+  if(!point){position=null;telemetry(null);status('每人舉起一手，最多兩人合作尋寶','searching');return;}
+  const previous=position;position=point;
+  telemetry(point,canControl&&accepted&&point.open);if(canControl&&accepted&&point.open)direction(point,previous);
+  if(!point.open){status('手掌合起：暫停 · 張開繼續','paused');return;}
   if(canControl&&!accepted){$('directionArrow').textContent='↖';$('directionText').textContent='滑鼠接手';$('controlCommand').textContent='滑鼠控制光圈';}
-  status(canControl?(accepted?'手掌追蹤中 · 滑鼠亦可隨時接手':'滑鼠優先 · 停低約三秒恢復手勢'):'設定中 · 關閉設定繼續遊戲','tracking');
+  status(canControl?(accepted?(trackedHands.length===2?'雙人合作 · 每人用一隻手控制光圈':'手掌追蹤中 · 可加入第二位玩家'):'滑鼠優先 · 停低約三秒恢復手勢'):'設定中 · 關閉設定繼續遊戲','tracking');
 }
 function model() {
   return new Promise((resolve,reject)=>{
@@ -106,7 +107,7 @@ async function pump(now) {
   } catch(error){busy=false;fail(error);}
 }
 function stop() {
-  generation++;starting=false;cancelModel?.();cancelModel=null;cancelAnimationFrame(frameId);worker?.terminate();worker=null;ready=false;busy=false;
+  generation++;handTracker.clear();trackedHands=[];trail=[];starting=false;cancelModel?.();cancelModel=null;cancelAnimationFrame(frameId);worker?.terminate();worker=null;ready=false;busy=false;
   stream?.getTracks().forEach(t=>t.stop());stream=null;video.srcObject=null;drawHand(null);deactivate();telemetry(null);
   liveInk.clearRect(0,0,reality.width,reality.height);$('liveFrameLabel').textContent='鏡頭未啟動';previewFrames=0;
   $('liveTag').textContent='OFF';
@@ -133,7 +134,7 @@ async function start(deviceId) {
     if(token!==generation)return;
     await model();
     if(token!==generation)return;
-    mode='hand';window.portalControlMode='hand';lastVideoTime=-1;lastResult=0;
+    mode='hand';window.portalControlMode='hand';lastVideoTime=-1;
     $('welcomeCamera').disabled=false;$('welcomeCamera').textContent='揮手入畫 · 停留開始';
     $('cameraStart').disabled=false;$('cameraStart').textContent='重新啟動';$('cameraStop').hidden=false;$('cameraPlaceholder').hidden=true;$('cameraPanel').hidden=true;
     const devices=(await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==='videoinput');
@@ -150,8 +151,8 @@ $('welcomeCamera').onclick=()=>{if(mode==='hand'){$('welcome').hidden=true;$('ca
 $('quickCamera').onclick=()=>{$('cameraPanel').hidden=false;start();};
 $('cameraClose').onclick=()=>{$('cameraPanel').hidden=true;};
 $('cameraSelect').onchange=e=>start(e.target.value);
-$('mirror').onchange=e=>{mirror=e.target.checked;video.style.transform=mirror?'scaleX(-1)':'none';position=null;};
-$('reach').oninput=e=>{reach=Number(e.target.value);position=null;};
+$('mirror').onchange=e=>{mirror=e.target.checked;video.style.transform=mirror?'scaleX(-1)':'none';position=null;handTracker.clear();trail=[];};
+$('reach').oninput=e=>{reach=Number(e.target.value);position=null;handTracker.clear();trail=[];};
 window.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='c'&&!e.ctrlKey&&!e.altKey&&!e.metaKey&&!e.target.matches('input,select,textarea'))$('cameraPanel').hidden=!$('cameraPanel').hidden;});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)deactivate();});
 window.addEventListener('pagehide',stop);
