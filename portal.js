@@ -1,13 +1,14 @@
 import {createJourney,discover,continueJourney,COMPLETION_TEXT} from './journey-state.mjs';
 import {recapFrame,recapDuration} from './recap.mjs';
 import {createScrollAtlas} from './scroll-atlas.mjs';
-import {createReveal,createTourGlow,createLensSparkles,createSpotlight,REVEAL_SECONDS} from './reveal.mjs?v=20261106-perf1';
+import {createReveal,createTourGlow,createLensSparkles,createSpotlight,REVEAL_SECONDS} from './reveal.mjs?v=20261106-perf2';
 import {createGameAudio} from './game-audio.mjs';
 import {createInputRouter} from './input-router.mjs';
 import {createRoundPicker} from './round-selection.mjs';
 import {installFullscreen} from './fullscreen.mjs';
-import {createFrameClock} from './performance.mjs';
-const frameClock=createFrameClock(30,performance.now());
+import {createFrameClock,readPerformanceSettings,trackingProfile} from './performance.mjs?v=20261106-perf2';
+let framePreferences;try{framePreferences=window.localStorage;}catch{}
+const frameSettings=readPerformanceSettings({search:window.location?.search||'',storage:framePreferences}),frameClock=createFrameClock(trackingProfile(frameSettings.profile).renderFps,performance.now());
 const audio=createGameAudio();
 const inputRouter=createInputRouter();
 const W=1280,H=720,VIEW=1646,SCROLL_W=30000,$=id=>document.getElementById(id),chapterPool=window.PORTAL_CHAPTERS;
