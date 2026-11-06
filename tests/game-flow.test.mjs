@@ -71,7 +71,17 @@ test('single and cooperative controls, clue guidance, complete journey and hand 
  assert.ok(edgeX<90&&edgeX>12);
  advance(2.1,()=>window.portalHands([{id:0,x:edgeX/1280,y:(edgeRect.top+source.y*edgeRect.height)/720,active:true}]));
  assert.equal(state().mode,'discovery','a visible edge target must be selectable');source.x=originalX;
- get('togglePerformance').click();assert.equal(state().total,1,'showing data must retain an already found treasure');assert.equal(state().mode,'discovery');get('hidePerformance').click();assert.equal(state().total,1);
+ // A worker model change must freeze stale hand input without touching a card,
+ // camera stream or shared treasure progress. Mouse controls remain available.
+ const beforeSwap={mode:state().mode,total:state().total,chapter:state().chapter};
+ ai.onmessage({data:{type:'model-changing',from:'full',to:'lite'}});
+ assert.equal(JSON.parse(get('cameraPanel').dataset.diagnostics).modelChanging,true);
+ advance(.7);assert.equal(state().total,beforeSwap.total);assert.equal(state().mode,beforeSwap.mode);assert.equal(stopped,false);
+ ai.onmessage({data:{type:'model-choice',model:'lite',reason:'full-over-budget'}});
+ ai.onmessage({data:{type:'model-ready',model:'lite',delegate:'GPU',selectionReason:'full-over-budget'}});
+ assert.equal(JSON.parse(get('cameraPanel').dataset.diagnostics).modelChanging,false);
+ assert.equal(state().chapter,beforeSwap.chapter);assert.equal(stopped,false);
+ get('togglePerformance').click();assert.match(get('performanceStats').textContent,/AI Lite/);assert.equal(state().total,1,'showing data must retain an already found treasure');assert.equal(state().mode,'discovery');get('hidePerformance').click();assert.equal(state().total,1);
  advance(1.5,()=>window.portalHands([{id:1,x:1220/1280,y:50/720,active:true}]));assert.equal(get('welcome').hidden,false,'header gestures remain available while a discovery card is open');get('welcomeCamera').click();advance(.1);
  advance(.2,[hand(.2,.3),hand(.8,.3)]);
  assert.equal(state().players.length,2,'camera delivers two independently active controls');
