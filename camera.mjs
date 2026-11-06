@@ -1,14 +1,16 @@
 import {createHandTracker} from './hand-math.mjs';
+import {createTrackingSchedule} from './performance.mjs';
+const android=/Android/i.test(navigator.userAgent||''),schedule=createTrackingSchedule(android);
 const $=id=>document.getElementById(id);
 const video=$('cameraVideo'),overlay=$('handOverlay'),ink=overlay.getContext('2d');
 const reality=$('liveCameraCanvas'),liveInk=reality.getContext('2d'),positionCanvas=$('palmMap'),mapInk=positionCanvas.getContext('2d');
 let lastPreview=0,previewFrames=0,trail=[];
 const handTracker=createHandTracker();let trackedHands=[];
-new ResizeObserver(()=>{const r=positionCanvas.getBoundingClientRect();if(!r.width||!r.height)return;const w=Math.round(r.width*2),h=Math.round(r.height*2);if(positionCanvas.width!==w||positionCanvas.height!==h){positionCanvas.width=w;positionCanvas.height=h;trail=[];}}).observe(positionCanvas);
+new ResizeObserver(()=>{const r=positionCanvas.getBoundingClientRect();if(!r.width||!r.height)return;const scale=Math.min(1.5,480/r.width,320/r.height),w=Math.round(r.width*scale),h=Math.round(r.height*scale);if(positionCanvas.width!==w||positionCanvas.height!==h){positionCanvas.width=w;positionCanvas.height=h;trail=[];}}).observe(positionCanvas);
 const connections=[[0,1,2,3,4],[0,5,6,7,8],[5,9,10,11,12],[9,13,14,15,16],[13,17,18,19,20],[0,17]];
 let stream,worker,busy=false,frameId=0,lastFrame=0,lastVideoTime=-1,position=null,generation=0;
 let mode='mouse',ready=false,mirror=true,reach=.15,starting=false,cancelModel=null,lastMotion=0;
-const diagnostics={state:'idle',frames:0,hands:0,ms:0,error:null};
+const diagnostics={state:'idle',frames:0,hands:0,ms:0,error:null,delegate:'CPU',averageMs:0,inputWidth:schedule.width};
 function status(text,state) {
   $('cameraStatus').textContent=text;diagnostics.state=state;
   $('cameraPill').textContent=text;$('cameraPill').dataset.state=state;
@@ -42,7 +44,7 @@ function drawPosition(point,active){
  }
 }
 function drawReality(now){
-  if(now-lastPreview<33||video.readyState<2||document.hidden)return;lastPreview=now;
+  if(now-lastPreview<(android?83:66)||video.readyState<2||document.hidden)return;lastPreview=now;
   const w=reality.width,h=reality.height,scale=Math.min(w/video.videoWidth,h/video.videoHeight),dw=video.videoWidth*scale,dh=video.videoHeight*scale;
   liveInk.fillStyle='#0e1711';liveInk.fillRect(0,0,w,h);liveInk.save();if(mirror){liveInk.translate(w,0);liveInk.scale(-1,1);}liveInk.drawImage(video,(w-dw)/2,(h-dh)/2,dw,dh);liveInk.restore();
   previewFrames++;$('liveFrameLabel').textContent='即時影像 · '+previewFrames+' 幀';reality.dataset.frames=previewFrames;
@@ -59,7 +61,7 @@ function drawHand(hands=[]) {
   for(const hand of hands){const points=hand.points;
   const scale=Math.min(overlay.width/(video.videoWidth||640),overlay.height/(video.videoHeight||480)),dw=(video.videoWidth||640)*scale,dh=(video.videoHeight||480)*scale;
   const xy=p=>[(overlay.width-dw)/2+(mirror?1-p.x:p.x)*dw,(overlay.height-dh)/2+p.y*dh];
-  ink.save();ink.shadowColor='#07110ed0';ink.shadowBlur=3;ink.strokeStyle='#00e676';ink.lineWidth=2.7;ink.lineCap='round';ink.lineJoin='round';
+  ink.save();ink.shadowColor='#07110ed0';ink.shadowBlur=0;ink.strokeStyle='#00e676';ink.lineWidth=2.7;ink.lineCap='round';ink.lineJoin='round';
   for(const chain of connections){ink.beginPath();chain.forEach((i,j)=>ink[j?'lineTo':'moveTo'](...xy(points[i])));ink.stroke();}
   ink.fillStyle='#39ff6a';for(const p of points){ink.beginPath();ink.arc(...xy(p),3.6,0,Math.PI*2);ink.fill();}
   const palm=[0,5,9,13,17].reduce((p,i)=>({x:p.x+points[i].x/5,y:p.y+points[i].y/5}),{x:0,y:0});
@@ -68,7 +70,7 @@ function drawHand(hands=[]) {
 }
 function result(data) {
   busy=false;diagnostics.frames++;diagnostics.ms=Math.round(data.ms);
-  const now=performance.now();trackedHands=handTracker.update(data.hands??(data.landmarks?[data.landmarks]:[]),now,mirror,reach);diagnostics.hands=trackedHands.length;
+  const now=performance.now();diagnostics.delegate=data.delegate||diagnostics.delegate;diagnostics.fallback=!!data.fallback;schedule.complete(data.ms,now,diagnostics.delegate);diagnostics.averageMs=Math.round(schedule.averageMs);diagnostics.inputWidth=schedule.width;window.portalHandTimeout=schedule.staleMs;trackedHands=handTracker.update(data.hands??(data.landmarks?[data.landmarks]:[]),now,mirror,reach);diagnostics.hands=trackedHands.length;
   drawHand(trackedHands);
   if(mode!=='hand')return;
   const canControl=$('cameraPanel').hidden,accepted=window.portalHands(trackedHands.map(h=>({id:h.id,x:h.x,y:h.y,active:canControl&&h.open})));
@@ -82,11 +84,11 @@ function result(data) {
 }
 function model() {
   return new Promise((resolve,reject)=>{
-    worker=new Worker(new URL('./hand-worker.mjs',import.meta.url),{type:'module'});
+    worker=new Worker(new URL('./hand-worker.mjs?v=20261106-perf1',import.meta.url),{type:'module'});
     const timer=setTimeout(()=>reject(new Error('追蹤模型載入逾時，請重新試一次。')),45000);
     cancelModel=()=>{clearTimeout(timer);reject(new DOMException('Cancelled','AbortError'));};
     worker.onmessage=({data})=>{
-      if(data.type==='ready'){clearTimeout(timer);cancelModel=null;ready=true;resolve();}
+      if(data.type==='ready'){clearTimeout(timer);cancelModel=null;ready=true;diagnostics.delegate=data.delegate||'CPU';resolve();}
       if(data.type==='result')result(data);
       if(data.type==='error'){clearTimeout(timer);reject(new Error(data.message));if(ready)fail(new Error(data.message));}
     };
@@ -97,17 +99,17 @@ function model() {
 async function pump(now) {
   frameId=requestAnimationFrame(pump);
   if(mode==='hand')drawReality(now);
-  if(mode!=='hand'||!ready||busy||document.hidden||video.readyState<2||now-lastFrame<65||video.currentTime===lastVideoTime)return;
+  if(mode!=='hand'||!ready||busy||document.hidden||video.readyState<2||!schedule.canSend(now,lastFrame)||video.currentTime===lastVideoTime)return;
   busy=true;lastFrame=now;lastVideoTime=video.currentTime;
   const current=generation;
   try {
-    const bitmap=await createImageBitmap(video,{resizeWidth:640,resizeQuality:'low'});
+    const bitmap=await createImageBitmap(video,{resizeWidth:schedule.width,resizeQuality:'low'});
     if(current!==generation||!worker){bitmap.close();busy=false;return;}
     worker.postMessage({type:'frame',bitmap,timestamp:now},[bitmap]);
   } catch(error){busy=false;fail(error);}
 }
 function stop() {
-  generation++;handTracker.clear();trackedHands=[];trail=[];starting=false;cancelModel?.();cancelModel=null;cancelAnimationFrame(frameId);worker?.terminate();worker=null;ready=false;busy=false;
+  generation++;schedule.reset();window.portalHandTimeout=450;handTracker.clear();trackedHands=[];trail=[];starting=false;cancelModel?.();cancelModel=null;cancelAnimationFrame(frameId);worker?.terminate();worker=null;ready=false;busy=false;
   stream?.getTracks().forEach(t=>t.stop());stream=null;video.srcObject=null;drawHand(null);deactivate();telemetry(null);
   liveInk.clearRect(0,0,reality.width,reality.height);$('liveFrameLabel').textContent='鏡頭未啟動';previewFrames=0;
   $('liveTag').textContent='OFF';
@@ -126,7 +128,7 @@ async function start(deviceId) {
   $('welcomeCamera').disabled=true;$('welcomeCamera').textContent='正在啟動鏡頭…';
   try {
     if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia)throw new Error('鏡頭需要 HTTPS 或本機網址，請用新版 Chrome／Edge 開啟遊戲。');
-    const acquired=await navigator.mediaDevices.getUserMedia({audio:false,video:{width:{ideal:640},height:{ideal:480},frameRate:{ideal:30,max:30},...(deviceId?{deviceId:{exact:deviceId}}:{facingMode:'user'})}});
+    const acquired=await navigator.mediaDevices.getUserMedia({audio:false,video:{width:{ideal:640},height:{ideal:480},frameRate:{ideal:android?20:24,max:24},...(deviceId?{deviceId:{exact:deviceId}}:{facingMode:'user'})}});
     if(token!==generation){acquired.getTracks().forEach(t=>t.stop());return;}
     stream=acquired;
     video.srcObject=stream;await video.play();

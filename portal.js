@@ -1,11 +1,13 @@
 import {createJourney,discover,continueJourney,COMPLETION_TEXT} from './journey-state.mjs';
 import {recapFrame,recapDuration} from './recap.mjs';
 import {createScrollAtlas} from './scroll-atlas.mjs';
-import {createReveal,createTourGlow,createLensSparkles,REVEAL_SECONDS} from './reveal.mjs';
+import {createReveal,createTourGlow,createLensSparkles,createSpotlight,REVEAL_SECONDS} from './reveal.mjs?v=20261106-perf1';
 import {createGameAudio} from './game-audio.mjs';
 import {createInputRouter} from './input-router.mjs';
 import {createRoundPicker} from './round-selection.mjs';
 import {installFullscreen} from './fullscreen.mjs';
+import {createFrameClock} from './performance.mjs';
+const frameClock=createFrameClock(30,performance.now());
 const audio=createGameAudio();
 const inputRouter=createInputRouter();
 const W=1280,H=720,VIEW=1646,SCROLL_W=30000,$=id=>document.getElementById(id),chapterPool=window.PORTAL_CHAPTERS;
@@ -13,11 +15,11 @@ installFullscreen(document,$('fullscreen'));
 let roundStorage;try{roundStorage=window.localStorage;}catch{}
 const nextRound=createRoundPicker(chapterPool,{storage:roundStorage});
 let chapters=chapterPool;
-const canvas=$('stage'),ctx=canvas.getContext('2d'),surface=document.createElement('canvas'),dim=document.createElement('canvas'),scratch=document.createElement('canvas');
-for(const c of [surface,dim,scratch]){c.width=W;c.height=H;}
+const canvas=$('stage'),ctx=canvas.getContext('2d'),surface=document.createElement('canvas'),dim=document.createElement('canvas');
+for(const c of [surface,dim]){c.width=W;c.height=H;}
 const hintSprite=document.createElement('canvas');hintSprite.width=hintSprite.height=48;
 {const ink=hintSprite.getContext('2d'),g=ink.createRadialGradient(24,24,0,24,24,24);g.addColorStop(0,'#fff9df');g.addColorStop(.15,'#ffe7a5ee');g.addColorStop(.4,'#f2bc5866');g.addColorStop(1,'#f2bc5800');ink.fillStyle=g;ink.fillRect(0,0,48,48);}
-let journey=createJourney(chapters),pointer={x:.5,y:.5,active:false,source:'mouse'},viewX=chapters[0].x,last=performance.now(),lastInput=0,dwell=0,hover=-1,uiHover='',uiTime=0,frames=0,travel=null,lastHint=0,artReady=false,celebration=null,recap=null,replayFinished=false;
+let journey=createJourney(chapters),pointer={x:.5,y:.5,active:false,source:'mouse'},viewX=chapters[0].x,lastInput=0,dwell=0,hover=-1,uiHover='',uiTime=0,frames=0,travel=null,lastHint=0,artReady=false,celebration=null,recap=null,replayFinished=false;
 let dimDirty=true,stageDirty=true,cachedView=NaN,lastIntro=-Infinity;
 const introCanvas=$('welcomeBackdrop'),introInk=introCanvas.getContext('2d');
 const reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches||false;
@@ -125,7 +127,8 @@ function ring(x,y,p,r=32,color='#f2d697'){ctx.save();ctx.strokeStyle='#07110edd'
 function drawDwellRings(){
  for(const control of controllers()){const state=controlState(control.id),p=paintingPoint(control);if(state.hover>=0&&state.dwell>0&&p.inside)ring(p.x*W,p.y*H,state.dwell/1.8,32,playerColors[control.id]||playerColors[0]);}
 }
-function lens(p,active=pointer.active,color='#efd58d77'){if(!active||!p.inside)return;const x=p.x*W,y=p.y*H,r=116,fx=scratch.getContext('2d');fx.clearRect(0,0,W,H);fx.drawImage(surface,0,0);fx.globalCompositeOperation='destination-in';const g=fx.createRadialGradient(x,y,r*.6,x,y,r*1.35);g.addColorStop(0,'#fff');g.addColorStop(1,'#fff0');fx.fillStyle=g;fx.fillRect(0,0,W,H);fx.globalCompositeOperation='source-over';ctx.drawImage(scratch,0,0);ctx.strokeStyle=color;ctx.lineWidth=1;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.stroke();}
+const spotlight=createSpotlight(W,H);
+function lens(p,active=pointer.active,color='#efd58d77'){if(active&&p.inside)spotlight.draw(ctx,surface,p.x*W,p.y*H,color);}
 function search(dt){
  cacheDim();
  const c=chapters[journey.chapter],found=journey.found[journey.chapter];ctx.drawImage(dim,0,0);
@@ -196,9 +199,9 @@ const vignetteLayer=document.createElement('canvas');vignetteLayer.width=W;vigne
 {const v=vignetteLayer.getContext('2d');for(const [x0,y0,x1,y1,rx,ry,rw,rh]of [[0,0,120,0,0,0,120,H],[W,0,W-120,0,W-120,0,120,H],[0,0,0,65,0,0,W,65],[0,H,0,H-85,0,H-85,W,85]]){const g=v.createLinearGradient(x0,y0,x1,y1);g.addColorStop(0,'#070d09');g.addColorStop(.3,'#070d09d9');g.addColorStop(1,'#070d0900');v.fillStyle=g;v.fillRect(rx,ry,rw,rh);}}
 function vignette(){ctx.drawImage(vignetteLayer,0,0);}
 function drawWelcome(now){if(document.hidden||now-lastIntro<50)return;lastIntro=now;const phase=reducedMotion?0:(now/120000)%2,x=(SCROLL_W-VIEW)*(phase<=1?phase:2-phase);atlas.drawPreview(introInk,x,0,VIEW,926,0,0,introCanvas.width,introCanvas.height);}
-document.addEventListener('visibilitychange',()=>{last=performance.now();});
+document.addEventListener('visibilitychange',()=>frameClock.reset(performance.now()));
 function draw(now){
- const rawDt=Math.max(0,(now-last)/1000),dt=Math.min(.06,rawDt),animationDt=Math.min(.25,rawDt);last=now;if(pointer.source==='hand'&&now-lastInput>450)pointer.active=false;for(const h of hands)if(now-(h.lastInput??0)>450)h.active=false;
+ requestAnimationFrame(draw);const timing=frameClock.step(now,document.hidden);if(!timing)return;const {dt,animationDt}=timing;if(pointer.source==='hand'&&now-lastInput>(window.portalHandTimeout||450))pointer.active=false;for(const h of hands)if(now-(h.lastInput??0)>(window.portalHandTimeout||450))h.active=false;
  const activeIds=new Set(controllers().map(h=>h.id));for(const [id,s]of controlStates)if(!activeIds.has(id)){s.hover=-1;s.dwell=0;s.uiHover='';s.uiTime=0;s.uiLatched='';}
  $('getHint').disabled=journey.mode!=='search'||!$('welcome').hidden||!$('cameraPanel').hidden||!artReady;
  if(hint&&journey.mode==='search'){const t=Math.min(1,(now-hint.start)/750),e=t*t*(3-2*t);artPan=hint.fromPan+(hint.toPan-hint.fromPan)*e;positionPainting();}
@@ -219,7 +222,7 @@ function draw(now){
  uiDwell(dt);const main=$('mainView').getBoundingClientRect(),active=controllers();
  for(let i=0;i<2;i++){const control=active[i],cursor=$(i?'handCursor2':'handCursor');cursor.hidden=!control;if(control){const pc=pointerClient(control);cursor.style.transform=`translate3d(${pc.x-main.left}px,${pc.y-main.top}px,0) translate(-50%,-50%)`;cursor.dataset.player=String(control.id==='mouse'?1:control.id+1);cursor.style.setProperty('--player-color',playerColors[control.id]||playerColors[0]);}}
  const percent=Math.round(Math.min(1,uiHover?uiTime/1.25:dwell/1.8)*100);$('dwellPercent').textContent=percent+'%';$('dwellFill').style.width=percent+'%';
- frames++;if(frames%12===0)canvas.dataset.state=JSON.stringify(getState());requestAnimationFrame(draw);
+ frames++;if(frames%12===0)canvas.dataset.state=JSON.stringify(getState());
 }
 function getState(){return {players:controllers().map(h=>({id:h.id,x:h.x,y:h.y,active:h.active,dwell:controlState(h.id).dwell})),hint:hint?{index:hint.index,age:(performance.now()-hint.start)/1000}:null,pendingDiscoveries:[...pendingDiscoveries],mode:journey.mode,chapter:journey.chapter,chapterName:chapters[journey.chapter].name,found:journey.found.map(a=>[...a]),total:journey.found.flat().length,totalClues,replayFinished,replaySeconds:recapDuration(chapters),uiHover,uiTime,welcome:!$('welcome').hidden,hover,dwell,pointer:{...pointer},viewX,artPan,artOverflow,artReady,frames,targets:chapters[journey.chapter].targets.map(t=>({id:t.id,x:t.x,y:t.y,r:t.r})),reward:{ready:reward.readyState,error:reward.error?.message||null,src:reward.getAttribute('src')}};}
 window.portalGame={getState,reset};reset();requestAnimationFrame(draw);

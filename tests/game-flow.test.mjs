@@ -45,11 +45,12 @@ test('single and cooperative controls, clue guidance, complete journey and hand 
  for(let i=0;i<15;i++)await Promise.resolve();
  assert.equal(get('welcome').hidden,false);assert.equal(get('liveTag').textContent,'LIVE',get('cameraStatus').textContent);assert.equal(get('welcomeCamera').disabled,false);
  function hand(x,y){const rawX=1-(.15+x*.7),rawY=.15+y*.7-.02;const points=Array.from({length:21},()=>({x:rawX,y:rawY}));points[0].y+=.1;for(const [tip,pip]of [[8,6],[12,10],[16,14],[20,18]]){points[pip].y-=.05;points[tip].y-=.2;}return points;}
- function advance(seconds,points){for(let i=0;i<Math.ceil(seconds/.05);i++){paintOperations.length=0;clock+=50;if(typeof points==='function')points();else if(points)ai.send(points);const batch=[...frames.values()];frames.clear();for(const fn of batch)fn(clock);}}
+ function advance(seconds,points,stepMs=50){for(let i=0;i<Math.ceil(seconds*1000/stepMs);i++){paintOperations.length=0;clock+=stepMs;if(typeof points==='function')points();else if(points)ai.send(points);const batch=[...frames.values()];frames.clear();for(const fn of batch)fn(clock);}}
  advance(1.6,hand(.5,620/720));
  assert.equal(get('welcome').hidden,true,'hand dwell must start on the intro itself');
  assert.equal(get('handCursor').hidden,false);assert.equal(get('handOverlay').dataset.landmarks,21);
  const state=()=>window.portalGame.getState();
+ const beforeHighRefresh=state().frames;advance(1,undefined,1000/120);assert.ok(state().frames-beforeHighRefresh<=31,'a 120Hz screen must not redraw the game 120 times per second');
  advance(1.5,()=>window.portalHands([{id:1,x:990/1280,y:50/720,active:true}]));assert.equal(get('fullscreenHint').hidden,false,'hand dwell on fullscreen explains the browser activation requirement');
  advance(1.5,()=>window.portalHands([{id:1,x:890/1280,y:50/720,active:true}]));assert.equal(get('welcome').hidden,false,'either player can open the painting introduction');
  get('welcomeCamera').click();advance(.1);

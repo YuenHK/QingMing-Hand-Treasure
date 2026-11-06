@@ -1,7 +1,17 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createScrollAtlas} from '../scroll-atlas.mjs';
-import {createReveal,createTourGlow,createLensSparkles,REVEAL_SECONDS} from '../reveal.mjs';
+import {createReveal,createTourGlow,createLensSparkles,createSpotlight,REVEAL_SECONDS} from '../reveal.mjs';
+
+test('two hands and a clue reuse a tiny feather mask and crop safely at every edge',()=>{
+ const canvases=[],sourceReads=[];let gradients=0;const surface={};
+ const ctx=new Proxy({createRadialGradient(){gradients++;return {addColorStop(){}};},drawImage(image,...args){if(image===surface)sourceReads.push(args);}},{get:(o,k)=>o[k]??(()=>{})});
+ const spotlight=createSpotlight(1280,720,()=>{const c={getContext:()=>ctx};canvases.push(c);return c;});
+ for(let i=0;i<30;i++)for(const [x,y]of [[0,0],[1280,720],[640,360]])spotlight.draw(ctx,surface,x,y);
+ assert.equal(canvases.length,2);assert.equal(gradients,1,'the feather gradient is made once');
+ assert.ok(canvases.every(c=>c.width*c.height<1280*720*.12),'mask area is below twelve percent of the full artwork');
+ for(const [sx,sy,sw,sh]of sourceReads){assert.ok(sx>=0&&sy>=0&&sx+sw<=1280&&sy+sh<=720);assert.ok(sw<=314&&sh<=314);}
+});
 
 test('a view crossing a tile boundary stays visible while small textures load',()=>{
  const images=[],draws=[];const makeImage=()=>{const image={naturalWidth:4096,naturalHeight:126};images.push(image);return image;};

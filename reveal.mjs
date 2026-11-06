@@ -1,5 +1,19 @@
 // Low-resolution mask and cached glow replace thousands of blurred circles.
 export const REVEAL_SECONDS=3;
+// Composite only a small crop, not a full 1280x720 image for every hand.
+export function createSpotlight(width,height,makeCanvas=()=>document.createElement('canvas')){
+ const radius=116,half=Math.ceil(radius*1.35),size=half*2,patch=makeCanvas(),mask=makeCanvas();
+ patch.width=patch.height=mask.width=mask.height=size;
+ const ink=patch.getContext('2d'),m=mask.getContext('2d'),g=m.createRadialGradient(half,half,radius*.6,half,half,radius*1.35);
+ g.addColorStop(0,'#fff');g.addColorStop(1,'#fff0');m.fillStyle=g;m.fillRect(0,0,size,size);
+ return {draw(ctx,surface,x,y,color='#efd58d77'){
+  x=Math.round(x);y=Math.round(y);const left=x-half,top=y-half,sx=Math.max(0,left),sy=Math.max(0,top),sw=Math.min(width,left+size)-sx,sh=Math.min(height,top+size)-sy;
+  if(sw<=0||sh<=0)return;
+  ink.clearRect(0,0,size,size);ink.drawImage(surface,sx,sy,sw,sh,sx-left,sy-top,sw,sh);
+  ink.globalCompositeOperation='destination-in';ink.drawImage(mask,0,0);ink.globalCompositeOperation='source-over';
+  ctx.drawImage(patch,left,top);ctx.strokeStyle=color;ctx.lineWidth=1;ctx.beginPath();ctx.arc(x,y,radius,0,Math.PI*2);ctx.stroke();
+ }};
+}
 // A few short-lived star glints follow movement, without lines or a light trail.
 export function createLensSparkles(makeCanvas=()=>document.createElement('canvas')){
  const sprite=makeCanvas();sprite.width=sprite.height=32;const ink=sprite.getContext('2d');
