@@ -166,3 +166,14 @@ header{gap:14px;align-items:center}
 .topActions button{white-space:nowrap}
 #mainView .topActions #aboutPainting{display:inline-block}
 #welcome{top:84px}
+
+/* Use the space from the removed duplicate branding for clearer intro copy. */
+.welcomeColumns h3{font-size:24px}
+.paintingIntro p{font-size:19px;line-height:1.55}
+.paintingIntro a{font-size:15px}
+.welcomeCard .welcomePlay b{font-size:20px}
+.welcomeCard .welcomePlay li span{font-size:17px;line-height:1.45}
+.hybridTip{font-size:16px;line-height:1.5}
+.welcomeArtwork span{font-size:19px}
+@container(max-width:620px){.welcomeColumns h3{font-size:22px}.paintingIntro p{font-size:17px}.welcomeCard .welcomePlay b{font-size:19px}.welcomeCard .welcomePlay li span{font-size:16px}.hybridTip{font-size:15px}}
+@media(max-height:650px){.welcomeColumns h3{font-size:22px}.paintingIntro p{font-size:18px}.paintingIntro a{font-size:14px}.welcomeCard .welcomePlay b{font-size:19px}.welcomeCard .welcomePlay li span{font-size:16px}.hybridTip{font-size:15px}}
