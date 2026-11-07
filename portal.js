@@ -6,7 +6,7 @@ import {createGameAudio} from './game-audio.mjs';
 import {createInputRouter} from './input-router.mjs';
 import {createRoundPicker} from './round-selection.mjs';
 import {installFullscreen} from './fullscreen.mjs';
-import {createFrameClock,readPerformanceSettings,trackingProfile} from './performance.mjs?v=20261106-auto2';
+import {createFrameClock,readPerformanceSettings,trackingProfile} from './performance.mjs?v=20261107-toolbar2';
 let framePreferences;try{framePreferences=window.localStorage;}catch{}
 const frameSettings=readPerformanceSettings({search:window.location?.search||'',storage:framePreferences}),frameClock=createFrameClock(trackingProfile(frameSettings.profile).renderFps,performance.now());
 const audio=createGameAudio();
@@ -111,13 +111,15 @@ $('mainView').addEventListener('pointerleave',()=>input(.5,.5,false,'mouse'));
 const introCard=$('welcomeCard');
 function fitWelcome(){
  if($('welcome').hidden)return;
+ // Reserve the actual wrapped toolbar height, including narrow displays.
+ $('welcome').style.top=Math.ceil($('gameHeader').getBoundingClientRect().bottom+12)+'px';
  const r=$('welcome').getBoundingClientRect(),w=introCard.offsetWidth,h=introCard.offsetHeight;
  if(!w||!h||!r.width||!r.height)return;
  const scale=Math.min(1,Math.max(1,r.width-24)/w,Math.max(1,r.height-24)/h);
  introCard.style.setProperty('--intro-scale',String(scale));
  $('welcome').dataset.layout=JSON.stringify({scale,width:w*scale,height:h*scale,availableWidth:r.width-24,availableHeight:r.height-24});
 }
-const introObserver=new ResizeObserver(fitWelcome);introObserver.observe(introCard);introObserver.observe($('welcome'));
+const introObserver=new ResizeObserver(fitWelcome);introObserver.observe(introCard);introObserver.observe($('welcome'));introObserver.observe($('gameHeader'));
 document.fonts?.ready.then(fitWelcome);
 function fitCompletion(){const n=$('notice'),r=$('mainView').getBoundingClientRect();if(n.hidden||n.dataset.phase!=='complete'||!n.offsetHeight)return;n.style.setProperty('--notice-scale',String(Math.min(1,(r.height-32)/n.offsetHeight,(r.width-32)/n.offsetWidth)));}
 const noticeObserver=new ResizeObserver(fitCompletion);noticeObserver.observe($('notice'));noticeObserver.observe($('mainView'));
@@ -169,7 +171,7 @@ function drawHint(now){
 }
 function uiDwell(dt){
  const headerIds=['getHint','fullscreen','aboutPainting','togglePerformance','reset'];
- const ids=!$('welcome').hidden?['welcomeCamera']:journey.mode==='discovery'||journey.mode==='complete'?['continue','replayNarration',...headerIds]:[...headerIds,'back','skipReplay'];
+ const ids=!$('welcome').hidden?['welcomeCamera',...headerIds]:journey.mode==='discovery'||journey.mode==='complete'?['continue','replayNarration',...headerIds]:[...headerIds,'back','skipReplay'];
  for(const id of ids)$(id).style.background='';
  uiHover='';uiTime=0;
  for(const control of controllers()){

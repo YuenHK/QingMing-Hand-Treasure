@@ -14,9 +14,9 @@ test('smooth mode keeps two players and single mode is an explicit choice',()=>{
  assert.equal(smooth.numHands,2);assert.equal(smooth.width,256);assert.equal(smooth.cameraWidth,320);assert.equal(smooth.fps,6);assert.equal(single.numHands,1);
  const schedule=createTrackingSchedule(true,'smooth');schedule.complete(200,1000,'CPU');assert.equal(schedule.width,256);assert.equal(schedule.canSend(1100,1000),false);assert.equal(schedule.canSend(1250,1000),true);
 });
-test('diagnostic URLs override saved settings without changing or requiring local storage',()=>{
+test('diagnostic URLs may override tracking settings but never open the panel on entry',()=>{
  const storage={getItem:()=>JSON.stringify({profile:'single',engine:'cpu'})};
- assert.deepEqual(readPerformanceSettings({search:'?diagnostics=1&performance=smooth&engine=auto',storage}),{profile:'smooth',engine:'auto',model:'auto',diagnostics:true});
+ assert.deepEqual(readPerformanceSettings({search:'?diagnostics=1&performance=smooth&engine=auto',storage}),{profile:'smooth',engine:'auto',model:'auto',diagnostics:false});
  assert.equal(readPerformanceSettings({storage}).profile,'single');
  assert.deepEqual(readPerformanceSettings({search:'?performance=invalid&engine=invalid',storage:{getItem(){throw Error('Blocked');}}}),{profile:'balanced',engine:'auto',model:'auto',diagnostics:false});
 });

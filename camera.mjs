@@ -1,6 +1,6 @@
 import {createHandTracker} from './hand-math.mjs';
-import {createTrackingSchedule,readPerformanceSettings,trackingProfile,trackingModel,createFrameCapture} from './performance.mjs?v=20261106-auto2';
-import {createModelMemory} from './adaptive-model.mjs?v=20261106-auto2';
+import {createTrackingSchedule,readPerformanceSettings,trackingProfile,trackingModel,createFrameCapture} from './performance.mjs?v=20261107-toolbar2';
+import {createModelMemory} from './adaptive-model.mjs?v=20261107-toolbar2';
 let preferenceStorage;try{preferenceStorage=window.localStorage;}catch{}
 const settings=readPerformanceSettings({search:window.location?.search||'',storage:preferenceStorage}),android=/Android/i.test(navigator.userAgent||''),config=trackingProfile(settings.profile,android),modelMemory=createModelMemory(preferenceStorage,{engine:settings.engine,numHands:config.numHands,profile:settings.profile}),modelConfig=trackingModel(settings.model==='auto'?(modelMemory.read()||'auto'):settings.model,android),schedule=createTrackingSchedule(android,settings.profile),capture=createFrameCapture();
 const $=id=>document.getElementById(id);
@@ -89,7 +89,7 @@ function result(data) {
 }
 function model() {
   return new Promise((resolve,reject)=>{
-    worker=new Worker(new URL('./hand-worker.mjs?v=20261106-auto2',import.meta.url),{type:'module'});
+    worker=new Worker(new URL('./hand-worker.mjs?v=20261107-toolbar2',import.meta.url),{type:'module'});
     const timer=setTimeout(()=>reject(new Error('追蹤模型載入逾時，請重新試一次。')),45000);
     cancelModel=()=>{clearTimeout(timer);reject(new DOMException('Cancelled','AbortError'));};
     worker.onmessage=({data})=>{
@@ -188,7 +188,7 @@ $('togglePerformance').onclick=()=>setDiagnostics(!showDiagnostics);
 $('hidePerformance').onclick=()=>setDiagnostics(false);
 $('applyPerformance').onclick=()=>{
  const profile=$('performanceMode').value,engine=$('performanceEngine').value,model=$('performanceModel').value;try{preferenceStorage?.setItem('qingming.performance.v2',JSON.stringify({profile}));}catch{}
- const url=new URL(window.location.href);url.searchParams.set('performance',profile);url.searchParams.set('engine',engine);url.searchParams.set('model',model);url.searchParams.set('diagnostics','1');window.location.href=url.href;
+ const url=new URL(window.location.href);url.searchParams.set('performance',profile);url.searchParams.set('engine',engine);url.searchParams.set('model',model);url.searchParams.delete('diagnostics');window.location.href=url.href;
 };
 setDiagnostics(showDiagnostics);
 $('cameraStart').onclick=()=>start();

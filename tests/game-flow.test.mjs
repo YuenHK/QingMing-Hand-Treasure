@@ -33,7 +33,7 @@ test('single and cooperative controls, clue guidance, complete journey and hand 
  const get=id=>{assert.ok(elements.has(id),`DOM is missing #${id}`);return elements.get(id);};
  globalThis.document={getElementById:get,createElement:()=>new Element(),hidden:false,documentElement:{requestFullscreen:()=>Promise.resolve()},fullscreenEnabled:true,addEventListener(){}};
  const legacySettings=process.env.QINGMING_TEST_LEGACY_SETTINGS?{getItem:key=>key==='qingming.performance.v2'?JSON.stringify({profile:'balanced',engine:'cpu',model:'full'}):null,setItem(){}}:undefined;
- globalThis.window={localStorage:legacySettings,isSecureContext:true,location:{search:process.env.QINGMING_TEST_PROFILE?'?performance='+process.env.QINGMING_TEST_PROFILE:''},addEventListener(){}};
+ globalThis.window={localStorage:legacySettings,isSecureContext:true,location:{search:process.env.QINGMING_TEST_PROFILE?'?performance='+process.env.QINGMING_TEST_PROFILE:process.env.QINGMING_TEST_DIAGNOSTICS?'?diagnostics=1':''},addEventListener(){}};
  globalThis.performance={now:()=>clock};
  globalThis.requestAnimationFrame=fn=>{frames.set(++id,fn);return id;};globalThis.cancelAnimationFrame=n=>frames.delete(n);
  globalThis.ResizeObserver=class{constructor(fn){this.fn=fn;}observe(){this.fn();}};
@@ -46,15 +46,27 @@ test('single and cooperative controls, clue guidance, complete journey and hand 
  globalThis.Worker=class{constructor(){ai=this;}postMessage(message){if(message.type==='init'){assert.equal(message.automatic,true);assert.equal(message.gpu,true);assert.equal(message.model,process.env.QINGMING_TEST_ANDROID?'lite':'full');assert.equal(message.numHands,process.env.QINGMING_TEST_PROFILE==='single'?1:2);queueMicrotask(()=>this.onmessage({data:{type:'ready'}}));}}terminate(){}send(points){this.onmessage({data:{type:'result',hands:Array.isArray(points?.[0])?points:points?[points]:[],ms:4}});}};
  await import('../chapters.js');await import('../portal.js');await import('../camera.mjs');
  for(let i=0;i<15;i++)await Promise.resolve();
+ assert.equal(get('performancePanel').hidden,true,'even legacy diagnostic URLs must wait for the toolbar button');
  assert.equal(get('performanceModel').value,'auto');assert.equal(get('performanceEngine').value,'auto');
  assert.equal(get('welcome').hidden,false);assert.equal(get('liveTag').textContent,'LIVE',get('cameraStatus').textContent);assert.equal(get('welcomeCamera').disabled,false);
  if(process.env.QINGMING_TEST_CAMERA_FALLBACK){assert.equal(cameraRequests.length,2);assert.ok(cameraRequests[0].video.width.max);assert.equal(cameraRequests[1].video.width.max,undefined,'an unsupported strict camera size retries with ideal constraints');}
  function hand(x,y){const rawX=1-(.15+x*.7),rawY=.15+y*.7-.02;const points=Array.from({length:21},()=>({x:rawX,y:rawY}));points[0].y+=.1;for(const [tip,pip]of [[8,6],[12,10],[16,14],[20,18]]){points[pip].y-=.05;points[tip].y-=.2;}return points;}
  function advance(seconds,points,stepMs=50){for(let i=0;i<Math.ceil(seconds*1000/stepMs);i++){paintOperations.length=0;clock+=stepMs;if(typeof points==='function')points();else if(points)ai.send(points);const batch=[...frames.values()];frames.clear();for(const fn of batch)fn(clock);}}
+ const state=()=>window.portalGame.getState();
+ // The introduction must expose the same debugging controls before play starts.
+ advance(1.5,()=>window.portalHands([{id:1,x:780/1280,y:50/720,active:true}]));
+ assert.equal(get('welcome').hidden,false);assert.equal(get('performancePanel').hidden,false,'intro hand dwell must open performance data');
+ assert.equal(state().total,0);assert.equal(stopped,false);get('hidePerformance').click();
+ advance(.1,()=>window.portalHands([]));
+ advance(1.5,()=>window.portalHands([{id:0,x:990/1280,y:50/720,active:true}]));
+ assert.equal(get('fullscreenHint').hidden,false,'fullscreen remains reachable on the intro');
+ get('aboutPainting').click();assert.equal(get('welcome').hidden,false);
+ const initialTargets=state().targets.map(t=>t.id);
+ advance(1.5,()=>window.portalHands([{id:1,x:1220/1280,y:50/720,active:true}]));
+ assert.equal(get('welcome').hidden,false);assert.ok(state().targets.every(t=>!initialTargets.includes(t.id)),'restart works before the game starts');
  advance(1.6,hand(.5,620/720));
  assert.equal(get('welcome').hidden,true,'hand dwell must start on the intro itself');
  assert.equal(get('handCursor').hidden,false);assert.equal(get('handOverlay').dataset.landmarks,21);
- const state=()=>window.portalGame.getState();
  const beforeHighRefresh=state().frames;advance(1,undefined,1000/120);assert.ok(state().frames-beforeHighRefresh<=31,'a 120Hz screen must not redraw the game 120 times per second');
  assert.equal(get('performancePanel').hidden,true,'the public game starts with its AI teaching view');
  const beforeStats={chapter:state().chapter,total:state().total};

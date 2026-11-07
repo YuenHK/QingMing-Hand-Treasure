@@ -13,9 +13,10 @@ export function trackingModel(model='auto',android=false){
 export function readPerformanceSettings({search='',storage}={}){
  let saved={};try{saved=JSON.parse(storage?.getItem('qingming.performance.v2')||'{}')||{};}catch{}
  // Old manual model/engine preferences must not lock ordinary launches.
- // Explicit diagnostic URL choices apply only to that URL.
+ // Explicit model/engine URL choices apply only to that URL.
+ // The diagnostic panel always starts closed, including old diagnostics=1 links.
  const query=new URLSearchParams(search),profile=query.get('performance')||saved.profile,engine=query.get('engine'),model=query.get('model');
- return {profile:['smooth','single'].includes(profile)?profile:'balanced',engine:engine==='cpu'?'cpu':'auto',model:['lite','full'].includes(model)?model:'auto',diagnostics:query.get('diagnostics')==='1'};
+ return {profile:['smooth','single'].includes(profile)?profile:'balanced',engine:engine==='cpu'?'cpu':'auto',model:['lite','full'].includes(model)?model:'auto',diagnostics:false};
 }
 export function createFrameCapture(makeCanvas=()=>document.createElement('canvas'),makeBitmap=source=>createImageBitmap(source)){
  const canvas=makeCanvas(),ink=canvas.getContext('2d',{alpha:false});
